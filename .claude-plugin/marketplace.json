@@ -1,0 +1,15 @@
+{
+  "name": "ansh-personal-skills",
+  "description": "Ansh's private personal skills marketplace.",
+  "owner": {
+    "name": "Ansh Viswanathan",
+    "email": "anshvis@users.noreply.github.com"
+  },
+  "plugins": [
+    {
+      "name": "ansh-personal",
+      "source": "./",
+      "description": "Personal /ansh-* Karpathy-loop skills + glue + web-handoff/read."
+    }
+  ]
+}
