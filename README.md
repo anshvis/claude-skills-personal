@@ -11,7 +11,7 @@ git clone https://github.com/anshvis/claude-skills-personal.git ~/claude-skills-
 ~/claude-skills-personal/setup.sh
 ```
 
-This symlinks `skills/ansh-*` and `ANSH*.md` into `~/.claude/skills/`. To update: `git -C ~/claude-skills-personal pull` (symlinks pick it up automatically).
+This symlinks every folder in `skills/` and `ANSH*.md` into `~/.claude/skills/`. To update: `git -C ~/claude-skills-personal pull` (symlinks pick it up automatically).
 
 ## Install as a plugin (Claude Code Web)
 

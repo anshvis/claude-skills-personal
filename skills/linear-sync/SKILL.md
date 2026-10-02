@@ -27,7 +27,7 @@ For each candidate issue, diff Linear's recorded state against session reality a
 - **Status drift** — work started/PR opened but issue is `Backlog`/`Todo`; or work merged but issue not `Done`. Map to the team's real workflow states (fetch via `get_team` / the issue's `statusType` if unsure of names).
 - **Description / scope drift** — a decision in chat contradicts, narrows, or extends the ticket body (e.g. "we chose `gist(badge, timeRange)` over a plain GiST", "deferred profileId to the downstream feature"). Note the exact lines that are now wrong or missing.
 - **Checklist drift** — plan checkboxes that are now complete.
-- **Link drift** — a PR exists but isn't attached; a `relatedTo`/`blockedBy` relation discovered in chat isn't recorded; a stacked-PR base isn't reflected.
+- **Link drift** — a PR exists but isn't attached to the **parent**; a `relatedTo`/`blockedBy` relation discovered in chat isn't recorded; a stacked-PR base isn't reflected. Also treat **a PR attached to a child ticket as drift**: PR links belong on the parent (see Step 4), so flag it to re-attach on the parent and detach from the child.
 - **Decision log** — material decisions with no home in Linear (these become comments, never silent description rewrites).
 
 If nothing drifted, say so in one line and stop — don't manufacture busywork.
@@ -41,8 +41,12 @@ REV-644
   status:  Backlog → In Progress        (branch has commits + draft PR #11409)
   comment: + decision log (gist(badge,timeRange) chosen; profileId deferred)
   body:    update "Open (reviewer)" line to record the GiST-scope decision
-  links:   attach PR #11412 (base: rev-611, stacked)
+  links:   attach PR #11412 (base: rev-611, stacked) — on the PARENT
 ```
+
+PR links always land on the **parent/epic**, never on a child. Children scope and sequence the work;
+attaching each section PR to its own child crowds the board and splits the stack's lineage. One
+parent holding the whole ordered PR series is the goal.
 
 Then **confirm before any outward-facing write** using `AskUserQuestion`:
 - Comments (append-only): safe to apply on confirm.
@@ -58,7 +62,11 @@ In dependency order (parent before children when statuses cascade):
 - Status: `mcp__claude_ai_Linear__save_issue` with the new `stateId`/state.
 - Decision comment: `mcp__claude_ai_Linear__save_comment` — a tight bullet list of decisions, each with its *why*, plus a link to the PR/branch. This is the durable record; favor it over rewriting the description.
 - Description/checklist edits: `save_issue` with the updated `description` (markdown, real newlines). Edit surgically — preserve the existing structure, flip checkboxes, append a short "Decisions" note rather than rewriting prose, unless the user asked for a fuller rewrite.
-- PR attachment / relations: attach the PR and set `relatedTo`/`blockedBy`/parent as discovered.
+- PR attachment / relations: attach the PR **to the parent/epic** via `create_attachment`, and set
+  `relatedTo`/`blockedBy`/parent as discovered. **Never attach a PR to a child ticket** — every PR in
+  a stack (sections + umbrella) hangs off the same parent, under the parent's name, so the ticket
+  shows the whole series in order. If a PR is already attached to a child, re-attach it on the parent
+  and `delete_attachment` from the child (that removal is an outward-facing edit — confirm it first).
 
 ## Step 5 — Confirm
 

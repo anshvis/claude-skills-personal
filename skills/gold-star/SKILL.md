@@ -11,9 +11,12 @@ The gold star is a **guide, not dogma**. The goal is to propagate the *principle
 
 ## Inputs
 
-Resolve two things before starting. If either is missing, ask.
+Resolve two things before starting.
 
-1. **The gold star** — the reference code. A `file:line`, a symbol name, or "the thing we just discussed". This is superior context: assume it represents the desired pattern even if other code in the repo disagrees with it.
+1. **The gold star** — the reference code. A `file:line`, a symbol name, or "the thing we just discussed".
+   - If the user names one, treat it as superior context: assume it represents the desired pattern even if other code in the repo disagrees with it.
+   - If the user does **not** name one and says they're looking for one (e.g. "find a gold star for X", "is there a place that solves this properly?") — do not just ask them to supply it. Invoke `/investigate-code`-style root-cause search to locate a real candidate: identify the pattern/problem the target needs a reference for, then search the repo for an existing solved instance of it, evaluating each candidate the same way step 1 below would (why is it good, does it actually resolve the redundancy/problem cleanly, or is it just similar-looking duplication). Exclude the target scope itself and its own package/feature area from candidates — a feature can't be its own gold star. Present the strongest candidate(s) with file:line and the rationale before proceeding to step 2; if nothing in the repo qualifies, say so plainly rather than forcing a weak match.
+   - If truly nothing is named and there's no ask to discover one either, ask.
 2. **The target scope** — what to hold to it. A file, a feature, a directory, a diff, or "write X like this". Respect the scope literally; if the user said "JUST the foo module", do not wander into bar.
 
 ## Process

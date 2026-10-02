@@ -1,50 +1,43 @@
 ---
 name: web-handoff
-description: HANDOFF the current terminal session to Claude Code Web (or your phone / another device) via Linear. Snapshots the working context — goal, git branch/commits/PRs/CI, what's done vs open, decisions + their rationale, landmines, and the ordered next steps — into a PERSONAL Linear ticket (assigned to you, labeled `web-handoff`, NOT linked to any epic/project/relation) so a Claude Code Web session pointed at the same GitHub repo can pick it up as context and keep solving. This is the cloud-travelling mirror of /ansh-save — /ansh-save writes to `.ansh/` which is git-excluded and never leaves the laptop; this writes to Linear, which the web sandbox and your phone can all read. Use when the user says "/web-handoff", "hand this off to web", "continue this on web/my phone", or wants to move work off the laptop. Pair with /web-read to pull it back into a terminal.
+description: HANDOFF the current terminal session to another device (Claude Code Web / your phone) by writing a self-contained handoff `.md` into the repo. Snapshots the working context — goal, git branch/commits/PRs/CI, what's done vs open, decisions + their rationale, landmines, and the ordered next steps — into a tracked markdown file so a session pointed at the same GitHub repo can pick it up and keep solving. This is the cross-device mirror of /ansh-save (which writes to git-excluded `.ansh/`). Use when the user says "/web-handoff", "hand this off to web", "continue this on web/my phone", or wants to move work off the laptop. Pair with /web-read to pull it back into a terminal.
 allowed-tools:
   - Bash
   - Read
+  - Write
   - Grep
   - Glob
-  - AskUserQuestion
-  - mcp__claude_ai_Linear__save_issue
-  - mcp__claude_ai_Linear__list_issues
-  - mcp__claude_ai_Linear__get_issue
-  - mcp__claude_ai_Linear__list_teams
-  - mcp__claude_ai_Linear__list_projects
-  - mcp__claude_ai_Linear__list_issue_labels
-  - mcp__claude_ai_Linear__list_comments
-  - mcp__claude_ai_Linear__save_comment
 ---
 
-# /web-handoff — Terminal → Web handoff via Linear
+# /web-handoff — Terminal → Web handoff via a repo `.md`
 
 `/ansh-save` captures a handoff to `.ansh/saves/` — perfect for the *same machine*, useless for the
 cloud: `.ansh/` is git-excluded (local `.git/info/exclude`), so it never reaches a Claude Code Web
-sandbox (which boots from your GitHub repo) or your phone. This skill puts the same handoff **into
-Linear**, the one place the laptop, the web sandbox, and your phone all reach.
+sandbox (which boots from your GitHub repo) or your phone. This skill writes the same handoff to a
+**tracked `.md` file in the repo**, the one channel the laptop, the web sandbox, and your phone all
+reach once it's on GitHub.
 
 The point is the same as `/ansh-save`: capture the **reasoning that lives only in the chat** — why a
 decision went the way it did, what was ruled out, the landmine you hit — plus the concrete repo/PR
 state, so a fresh session on another device resumes with zero re-derivation.
 
-## Channel constraints — READ FIRST (learned 2026-07-06)
+## Why a repo `.md` (and NOT Linear / external cloud) — READ FIRST
 
-The security / auto-mode classifier **hard-blocks the assistant from uploading private-repo content**
-(source code, file paths, architecture, DB schema, business logic) **to external personal cloud
-services — Google Drive, Notion, etc. — as data exfiltration. Sanitizing the content does NOT clear
-it** (a plan with only file paths + architecture was still denied). Do **not** attempt Drive / Notion /
-other external-cloud uploads for a handoff — it will be denied every time.
+- **No Linear, ever.** This workspace has **no private Linear team and cannot create one**, and a
+  handoff carries internal decisions/architecture that must not land in a shared team (that's a leak).
+  Do not attempt a Linear ticket for the handoff.
+- **No external cloud** (Google Drive, Notion, etc.). The security classifier hard-blocks uploading
+  private-repo content there as exfiltration; sanitizing does not clear it. Don't try.
+- **The repo itself is the in-boundary channel.** A private GitHub repo is readable by your own Claude
+  Code Web / phone session. A tracked `.md` on the branch is the reliable, privacy-preserving way to
+  move the handoff across devices.
 
-- The **company Linear workspace is in-boundary** (it already holds repo/PR references) and is the
-  intended destination — but a handoff there is only **private** if it lives in a **private team**
-  (Step 2). Assignment / label / project do NOT make it private, and **many users cannot create teams**
-  (only join them), so a private Linear destination may simply be unavailable.
-- **If no private in-boundary destination exists, do NOT push the handoff to any external service.**
-  Instead PRODUCE the handoff and let the **user relocate it themselves** — that does not cross the
-  tool trust boundary. Preferred fallback: **write the handoff to a local file and surface it with
-  `SendUserFile`** for the user to upload into Claude Web; or print the markdown in-chat for the user
-  to paste. This is the reliable, privacy-preserving path when private Linear isn't an option.
+## What this skill does and does NOT do
+
+- **DOES:** write a self-contained handoff `.md` into the repo working tree.
+- **DOES NOT:** commit, and **DOES NOT push**. Leave the file uncommitted. Getting it onto mobile is
+  the user's call — they commit + push it themselves when ready (or a later `/ship`/commit sweeps it
+  up). Never run `git commit`/`git push` from this skill.
 
 ## Step 1 — Gather the context (don't skip the "why")
 
@@ -55,52 +48,24 @@ Collect, in this order:
 - **PRs / CI** — `gh pr list --head <branch>` and for each open PR `gh pr view <n> --json
   number,title,url,state,baseRefName,statusCheckRollup` (state + check summary). Capture stacked-PR
   bases if relevant.
-- **Linear** — any tickets the branch maps to (`rev-644-...` → REV-644) and their status.
+- **Linear** — any tickets the branch maps to (`rev-644-...` → REV-644) and their status (for
+  *reference in the doc* — not as a destination).
 - **What's done vs open** — per work-item, one line each, with evidence (which PR/commit/test).
 - **Decisions + rationale** — the judgment calls made in-chat and *why* (this is the load-bearing
-  part a fresh session can't reconstruct).
+  part a fresh session can't reconstruct). If an earlier decision was reversed, say so explicitly.
 - **Landmines / gotchas** — anything surprising discovered (stale base, flaky infra, a convention).
 - **Ordered next steps** — the exact sequence to continue.
 
 If `/ansh-save` already wrote a local save this session, read it and reuse its content — this skill is
-that content, relocated to Linear.
+that content, placed in a tracked repo file instead of git-excluded `.ansh/`.
 
-## Step 2 — Resolve a PRIVATE destination (once, then reuse)
+## Step 2 — Write the handoff `.md`
 
-**Privacy model — read this first, it is the whole point.** Linear has **no** private-by-default
-"personal" area. **"My Issues" is only a filter/view — assigning an issue to yourself does NOT make
-it private.** Any issue in a **shared team** (Engineering, a Pod, Operations, etc.) is visible to
-every member of that team, and a **project or label confers no privacy whatsoever**. The ONLY way to
-keep a handoff private is to put it in a **private team** (members-only visibility). A private team
-you belong to is still fully readable by your *own* Claude Web / phone Linear auth, so it satisfies
-both privacy and the cross-device purpose. A handoff carries internal decisions/rationale — treat a
-shared-team placement as a leak unless the user explicitly opts in.
-
-- **Team = the privacy boundary.** The handoff MUST live in a **private team** whose only member is
-  the user (e.g. `<Name> Handoffs` / `<Name> Personal`). Resolve it via `list_teams` and prior
-  handoffs. **The Linear MCP here cannot create teams** — if no private team exists, **STOP and ask
-  the user to create one** in the Linear UI (Settings → Teams → New team → visibility **Private**,
-  membership just them), then reuse it every time. **Do NOT fall back to a shared team** without the
-  user's explicit, informed consent that their teammates will be able to read the handoff.
-- **Assignee** — `me` (organizational convenience only — this is NOT a privacy mechanism; see above).
-- **Label** — ensure a `web-handoff` label exists **on that private team** (`list_issue_labels`;
-  create if missing). Note: **workspace-wide labels require admin**, so create it as a *team* label
-  (pass the private team's `teamId` to `create_issue_label`). This is the discovery key `/web-read` uses.
-- **Project** — optional, *inside the private team*, for tidiness only. A project does **not** affect
-  visibility, so never rely on it for privacy. Skip unless the user asks.
-- **Do NOT** set `parentId`, `relatedTo`, `blockedBy`, or link it to any feature epic. It is a
-  free-standing private note.
-
-## Step 3 — Write (or update) the handoff ticket
-
-**Dedupe first:** `list_issues` filtered by `label: web-handoff`, `assignee: me`, ordered by
-`updatedAt`; if one already exists **for this repo+branch** (match the title/marker), UPDATE it
-rather than creating a duplicate. Otherwise create a new one.
-
-- **Title:** `[web-handoff] <repo>@<branch> — <short goal>` (e.g.
-  `[web-handoff] web-app@rev-746-sec-c — UKG skill ingestion stack`).
-- **Body:** Markdown, both human- and machine-readable. Start with a fenced context block so
-  `/web-read` can parse it deterministically, then the prose handoff:
+- **Path:** `handoffs/<branch>.md` at the repo root (create `handoffs/` if missing). A tracked path so
+  the user can push it and have Claude Code Web read it off GitHub. Keep one file per branch — if it
+  already exists for this branch, UPDATE it in place (single source of truth) rather than duplicating.
+- **Content:** Markdown, both human- and machine-readable. Start with a fenced/comment context block
+  so `/web-read` can parse it deterministically, then the prose handoff:
 
   ```
   <!-- web-handoff:v1 -->
@@ -112,27 +77,28 @@ rather than creating a duplicate. Otherwise create a new one.
   updated: <ISO date — stamp it from `date -u`, do not invent>
   ```
 
-  Then sections: **Goal / DoD**, **Repo & PR state** (branch, PR links + CI status), **Done**,
-  **Open / in-flight**, **Decisions & rationale**, **Landmines**, **Next steps (ordered)**, and a
-  final **Resume in Claude Web** line:
-  > In Claude Code Web on `vitalizecare/web-app`, say: *"read Linear `<ISSUE-ID>` and continue"* — or run `/web-read`.
+  Then sections: a top **Resume** line (how to re-enter on the other device), **Goal / DoD**,
+  **Repo & PR state** (branch, PR links + CI status), **Done**, **Open / in-flight**, **Decisions &
+  rationale**, **Landmines**, **Next steps (ordered)**, and any **Open questions for the user**.
+
+  The **Resume** line should read:
+  > **Resume on mobile / Claude Code Web** (repo `<repo>`, branch `<branch>`): say *"read
+  > `handoffs/<branch>.md` and continue"*.
 
 - Keep secrets/tokens out. Link PRs inline. Convert relative dates to absolute.
 
-**Confirm before writing** (it's outward-facing): show the user the title + a short summary and the
-target (team/project), then create/update on approval.
+## Step 3 — Return the pointer
 
-## Step 4 — Return the pointer
-
-Print the **issue URL + identifier** and the exact copy-paste line for the web session. Remind the
-user they still need Claude Code Web pointed at the same repo, and (if the web sandbox lacks the
-Linear connector) that they can paste the ticket body directly.
+Print the **file path** and remind the user:
+- The file is **written but not committed/pushed** — to reach mobile/web they commit + push it (or let
+  their normal flow do it), then open Claude Code Web on the same repo/branch.
+- The exact re-entry line: *"read `handoffs/<branch>.md` and continue"* — or run `/web-read`.
 
 ## Notes
 
-- **Linear auth:** needs the Linear MCP connected (the claude.ai Linear connector locally). If it
-  isn't, tell the user to connect it (`/mcp`) — don't fabricate an issue id.
-- **One live handoff per branch:** update-in-place keeps a single source of truth; stale handoffs
-  should be closed (see `/web-read`, which offers to mark it done on resume).
-- Not a replacement for `/ansh-save` on the same machine, and not durable cross-session *facts*
-  (that's memory) — this is a point-in-time, cloud-reachable work handoff.
+- **No network side effects.** This skill only writes a local file. No Linear, no external upload, no
+  git commit/push. If the user wants it committed, they say so (or use a commit skill).
+- **One live handoff per branch:** update-in-place at `handoffs/<branch>.md` keeps a single source of
+  truth; delete stale ones when the work lands.
+- Not a replacement for `/ansh-save` on the same machine, and not durable cross-session *facts* (that's
+  memory) — this is a point-in-time, repo-portable work handoff.
