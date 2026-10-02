@@ -1,6 +1,6 @@
 ---
 name: ansh-review
-description: EVALUATOR role in the Karpathy loop. Runs at Opus medium/high effort with extended thinking — a thinking role, one step below the planner and well above the cheap specialist. Scores a specialist's output against the subtask's explicit done-criteria, verifies the planner's flagged edge cases were handled, finds gaps/bugs/risks, and decides whether to evaluate in-session or pull in FRESH/CROSS-MODEL eyes. This is the "second agent that evaluates against defined criteria" from the Karpathy loop — it returns structured PASS/FAIL + findings that /ansh-loop uses to decide revise-or-ship. Use when the user says "/ansh-review", after a /ansh-task completes, or when /ansh-loop reaches the evaluation step. Routes to in-session review, review-fresh (no-history parallel agents), or codex (cross-model) per a risk rule.
+description: EVALUATOR role in the Karpathy loop. Runs at Opus medium/high effort with extended thinking — a thinking role, one step below the planner and well above the cheap specialist. Scores a specialist's output against the subtask's explicit done-criteria, verifies the planner's flagged edge cases were handled, finds gaps/bugs/risks, and always pulls in CROSS-MODEL (codex) eyes for the bug hunt. This is the "second agent that evaluates against defined criteria" from the Karpathy loop — it returns structured PASS/FAIL + findings that the orchestrator (/ansh-small-loop or /ansh-loop) uses to decide revise-or-ship. Runs a cross-model codex review pass on EVERY evaluation by default (the strongest "second agent" is a different model — it catches bugs Claude is structurally blind to), with a free in-session adversarial pass alongside, and adds review-fresh (no-history parallel Claude agents) or thermo-nuclear (strict maintainability swarm) on top for high-risk diffs. Use when the user says "/ansh-review", after a /ansh-task completes, or when /ansh-small-loop or /ansh-loop reaches the evaluation step.
 allowed-tools:
   - Bash
   - Read
@@ -8,6 +8,7 @@ allowed-tools:
   - Glob
   - Agent
   - Skill
+  - Workflow
 ---
 
 # /ansh-review — Evaluator
@@ -26,6 +27,24 @@ Evaluation is where subtle bugs and missed edge cases get caught; it's deliberat
 than `/ansh-task` (cheap execution) or `/ansh-debug` (more procedural root-causing). Even at the
 Standard setting, **don't run review on a cheap model** — a shallow evaluator is worse than none,
 because it manufactures false confidence.
+
+## Phase 0 — Ground yourself in the codebase's patterns (always, before judging)
+
+Do not evaluate against generic taste — evaluate against **this repo's** written standards and
+prior art. Before scoring, load (skim headings, read the sections the diff touches):
+
+- Root `AGENTS.md`, then the nearest nested `AGENTS.md` for the touched packages.
+- `.agents/skills/best-practices/references/` — the canonical pattern docs:
+  `services-and-layers.md` (repo/facade split), `vertical-slices.md` (slice ownership and
+  placement), `contracts-and-domain.md` (schemas, branded IDs, domain types), `errors.md`
+  (tagged errors, no silent failure), `testing-and-review.md`, `dates.md` (ZDT/temporal),
+  `repo-hygiene.md`, `migration.md`, `accessibility.md`.
+- For Effect idioms: `bunx effect-solutions show <topic>` and `submodules/effect` — never invent
+  a pattern the codebase hasn't blessed.
+- **Prior art beats doctrine:** before flagging "wrong pattern", grep for how the nearest sibling
+  slice does it (e.g. an existing Repo + Facade pair, an existing projector). A diff consistent
+  with its best-in-class neighbor is not a finding; a diff consistent with a *known-bad* neighbor
+  still is — cite the reference doc, not the neighbor.
 
 ## Phase 1 — Score against done-criteria (always)
 
@@ -81,18 +100,50 @@ still do your own adversarial pass for edge cases the planner may have missed.
 ## Phase 2 — Decide the depth of evaluation (the fresh-eyes rule)
 
 The Karpathy loop says the evaluator is *"a second agent, or the same agent with a different
-prompt context."* Pick the depth deliberately:
+prompt context."* The strongest version of "a second agent" is a **different model** — a mind
+that is structurally blind to different things than Claude is. So:
 
-| Condition | Evaluation mode |
+**Codex is the default review pass on every evaluation.** Run the codex CLI directly in **review
+mode**, scoped to this subtask's diff and its done-criteria, on every `/ansh-review` — not just
+the big or risky ones. The binary/auth check, exact invocation, gate parsing, and presentation
+format all live in `~/.claude/skills/ANSH-codex.md`; read it rather than guessing the command. A
+cross-model fresh opinion is where the real bugs get caught — this is the whole point of the
+evaluator role. Feed Codex the subtask's done-criteria and the packet's "Watch out for" edge cases
+so it grades against the same bar you do.
+
+Run the free in-session adversarial pass alongside it (always — see below); its findings and
+Codex's findings both flow into the same Phase 3 verdict. Then layer on the heavier modes when the
+stakes justify them:
+
+| Condition | Add this on top of the Codex pass |
 |---|---|
-| Routine iteration, low blast radius (most subtasks) | **In-session** — you, now, with context. Cheap, fast. |
-| Subtask stamped `fresh_eyes: review-fresh`, OR touches auth / payments / migrations / destructive / data-loss | **`review-fresh`** — parallel Claude subagents with NO chat history. Kills tunnel-vision and confirmation bias. Requires a clean working tree (it rebases onto `dev`). |
-| Subtask stamped `fresh_eyes: codex`, OR a large diff, OR you want a genuinely orthogonal mind, OR the user said "P1 gate / full review" | **`codex`** — cross-model (OpenAI). Catches what Claude is structurally blind to. |
-| In-session and a fresh pass **disagree** | escalate to **`codex`** to break the tie |
+| Every evaluation (default) | **`codex`** — cross-model review of the diff vs done-criteria. This is the baseline, always run. |
+| Subtask stamped `fresh_eyes: review-fresh`, OR touches auth / payments / migrations / destructive / data-loss | **`review-fresh`** — parallel Claude subagents with NO chat history. Kills tunnel-vision and confirmation bias. Requires a clean working tree (it rebases onto `dev`). Runs in ADDITION to Codex, not instead of it. |
+| User said "thermo-nuclear" / "thermonuclear", OR the diff is a large structural change (new slice, consolidation merge, refactor touching >~10 files), OR a file is at risk of crossing 1k lines | **`thermo-nuclear`** — strict maintainability audit + verification swarm (below), on top of the Codex pass |
+| Codex and your in-session read **disagree** on a finding | resolve it explicitly — re-read the cited code, and if still unresolved, escalate to `review-fresh` to break the tie. Never silently drop a Codex finding. |
 
-Default bias: **iterate in-session; go fresh when the cost of being wrong is high or you're at a
-landing gate.** Don't spend a cross-model pass on a one-line Quick subtask. Don't ship an auth
-change on in-session review alone.
+If Codex is genuinely unavailable (the binary/auth check in `ANSH-codex.md` comes back
+`CODEX_UNAVAILABLE`), fall back to `review-fresh` for that evaluation and note in the verdict that
+the cross-model pass was skipped. Do not silently downgrade to in-session-only; a skipped
+cross-model pass is a concern the loop should see.
+
+**`thermo-nuclear` mode.** Two halves, run together:
+
+1. **Standards + doctrine:** invoke the `thermo-nuclear-code-quality-review` skill
+   (`~/.claude/skills/thermo-nuclear-code-quality-review/SKILL.md` — read it directly if the
+   Skill tool doesn't list it this session) and apply its full bar — code-judo ambition, the
+   1k-line rule, spaghetti-growth blockers, boundary/type cleanliness — **on top of** this
+   skill's Phase 0 pattern grounding and Phase 1 layering gate, not instead of them.
+2. **Swarm + adversarial verify:** when the diff is big enough to exceed one honest read (or the
+   user asked for a swarm), fan out via the Workflow tool: one reviewer per dimension
+   (`pr-review-code-reviewer`, `pr-review-silent-failure-hunter`, `pr-review-test-analyzer`,
+   `pr-review-type-analyzer`, `pr-review-comment-analyzer`, `pr-review-simplifier`), each
+   returning structured findings scoped to *this diff only*; then an adversarial verifier per
+   finding that tries to REFUTE it against the actual code (default to refuted when uncertain).
+   Only verified findings enter Phase 3 — unverified reviewer output is noise, not evidence.
+   Merge-consolidation diffs get an extra instruction: hunt semantic merge errors in the
+   conflict-resolved files (code kept from one side assuming state the other side removed,
+   dead imports/state, stale comments describing removed behavior).
 
 Always run a quick in-session adversarial pass regardless of mode — think like an attacker and a
 chaos engineer for a moment: edge cases, race conditions, nil propagation, silent failure,
@@ -106,14 +157,14 @@ Sort everything you found into:
   `/ansh-debug` rather than a blind patch.
 - **NIT** — style/clarity; optional. If a `gold-star` reference applies, note divergence from it.
 
-## Output (what /ansh-loop consumes)
+## Output (what the orchestrator — /ansh-small-loop or /ansh-loop — consumes)
 
 Return a compact verdict block:
 
 ```
 VERDICT: PASS | REVISE | DEBUG
 CRITERIA: <n met> / <n total>
-MODE: in-session | review-fresh | codex
+MODE: codex (default) [+ in-session] [+ review-fresh] [+ thermo-nuclear]   # codex always present unless it says CODEX_SKIPPED (unavailable)
 BLOCKERS: [ {subtask, finding, suggested fix} ... ]
 BUGS: [ {symptom, why root-cause is non-obvious} ... ]   # → /ansh-debug
 NITS: [ ... ]

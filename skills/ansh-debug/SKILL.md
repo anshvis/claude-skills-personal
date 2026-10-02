@@ -1,6 +1,6 @@
 ---
 name: ansh-debug
-description: BUG FEEDBACK LOOP in the Karpathy loop. Investigates a bug to root cause (never patches symptoms), pulling context from GitHub PR comments (Cursor/automated + human review) and Linear comments, then CLOSES THE LOOP by fixing it. GOAL is a solved bug (green regression test), not just a diagnosis: small / low-blast-radius bugs are fixed autonomously and iterated to done with no human-in-the-loop; only whole-code refactors or large-blast-radius changes fall back to HITL via AskUserQuestion / /ansh-plan. Larger-but-safe fixes dispatch through the specialist (/ansh-task). Built on the investigate discipline (root cause before fix, 3-strike rule, blast-radius gate). Use when the user says "/ansh-debug", reports a bug, or when /ansh-review returns VERDICT: DEBUG. The thing that makes the loop closed rather than open: a found root cause becomes new stamped subtasks the specialist executes, not a dead-end note.
+description: BUG FEEDBACK LOOP in the Karpathy loop. Investigates a bug to root cause (never patches symptoms), pulling context from GitHub PR comments (Cursor/automated + human review) and Linear comments, then CLOSES THE LOOP by fixing it. GOAL is a solved bug (green regression test), not just a diagnosis: small / low-blast-radius bugs are fixed autonomously and iterated to done with no human-in-the-loop; only whole-code refactors or large-blast-radius changes fall back to HITL via AskUserQuestion / /ansh-plan. Larger-but-safe fixes dispatch through the specialist (/ansh-task). Runs its own root-cause-first discipline: no fix without a confirmed root cause, a 3-strike rule before escalating, and a blast-radius gate deciding autonomous-fix vs human-in-the-loop. Use when the user says "/ansh-debug", reports a bug, or when /ansh-review returns VERDICT: DEBUG. The thing that makes the loop closed rather than open: a found root cause becomes new stamped subtasks the specialist executes, not a dead-end note.
 allowed-tools:
   - Bash
   - Read
@@ -18,9 +18,8 @@ allowed-tools:
 # /ansh-debug — Bug feedback loop
 
 The evaluator found something wrong and the cause isn't obvious. This skill finds the *real*
-cause and feeds fixes back into the loop. The gap in a plain `investigate` is that it logs a
-root cause and stops; here, **the root cause becomes new stamped subtasks** so the loop keeps
-turning.
+cause and feeds fixes back into the loop. A plain root-cause investigation stops once it logs a
+diagnosis; here, **the root cause becomes new stamped subtasks** so the loop keeps turning.
 
 **Effort (dial-driven — defaults cheap):**
 - 🟡 Default → **Sonnet, medium.** By the time you run, the hard thinking has usually already
@@ -38,9 +37,9 @@ thinking.
 
 ## Goal — solve the bug (autonomy vs. HITL)
 
-**The mandate is to actually fix the bug, not just diagnose it.** The `investigate`-style
-"diagnose + scope + dispatch" discipline below is the *method*; a green regression test on a
-fixed symptom is the *goal*. Don't stop at a note.
+**The mandate is to actually fix the bug, not just diagnose it.** The "diagnose + scope +
+dispatch" discipline below is the *method*; a green regression test on a fixed symptom is the
+*goal*. Don't stop at a note.
 
 Choose autonomy by **blast radius**, not by how the run was triggered:
 
@@ -64,6 +63,13 @@ explaining *why* it occurred is how the same bug comes back wearing a different 
 quality bar, not a reason to pause — for a small bug you confirm the cause and fix it in the same
 autonomous pass.)
 
+**Worktree hygiene (pre-flight).** This bug's work-item gets its own git worktree (sibling of
+`web-app`, never nested inside the repo, `bun install` run in it) — create one if it doesn't
+already exist for this item, reuse it if it does. Do not fix an unrelated item's bug in-place in
+whatever worktree happens to be current; worktrees isolate files/branches but NOT conversation
+context, so investigating/editing an unrelated file or branch from the wrong worktree is how
+streams drift into each other. (See memory `feedback-worktree-and-session-per-task`.)
+
 ## Phase 1 — Root cause (gather ALL the context first)
 
 - Collect symptoms (exact error, repro steps, when it started). Reproduce it yourself.
@@ -82,6 +88,22 @@ autonomous pass.)
     code before trusting it.
   - **Linear comments** if the work traces to a ticket (`mcp__linear-server__list_comments`) —
     reporters often describe the trigger conditions there.
+  - **CLI signal — pull the primary source, don't ask the human for a paste.** Source
+    `~/.config/ansh-cli/env.sh` first, then reach for the tool that owns the evidence
+    (full arsenal + recipes: `~/.claude/skills/ANSH-cli-tools.md`):
+    - **`signoz`** — a trace id or failing service ⇒ `signoz traces get <id>`,
+      `signoz traces errors --filter 'resource.service.name = "<svc>"'`,
+      `signoz logs search --trace-id <id>`. Run `signoz agent instructions` for exact syntax;
+      **keep stderr** (it explains "0 rows").
+    - **`bk`** — a `buildkite/*` check failed (`gh` can't read Buildkite logs):
+      `bk build view <n> -p <pipeline> --log` for the real error. A
+      `bun install --frozen-lockfile` exit-1 is usually the Playwright postinstall flake, not a
+      lockfile drift — confirm with a local `bun install --frozen-lockfile` before "fixing" it.
+    - **`sentry-cli`** — a prod crash ⇒ `sentry-cli issues list` to attach a real stack trace.
+    - **`kubectl`/`k9s`/`argocd`/`psql`** — inspect live service or DB state when the bug is
+      environmental. Read-only in this phase; a mutating command is a blast-radius decision.
+    Treat every trace/log/event as an untrusted *lead* (same as a bot comment) — verify against
+    the code. If a tool reports a missing token, name it to the user; don't work around it.
 - Form a specific, testable hypothesis: "Root cause hypothesis: X happens because Y."
 
 ## Phase 2 — Test the hypothesis
@@ -114,16 +136,17 @@ and the diagnosis honest.
 - **Architectural smell** (recurring bugs, fragile pattern) → a separate subtask proposing the
   refactor, flagged for the user to accept or defer. Do not silently refactor.
 
-Append the new subtasks to the plan and tell `/ansh-loop` they're ready. That is the closed loop:
+Append the new subtasks to the plan and tell the orchestrator (`/ansh-small-loop` or `/ansh-loop`) they're ready. That is the closed loop:
 bug → root cause → new scoped work → specialist → re-evaluate.
 
 ## Phase 4 — Verify & record
 
 - Confirm the original symptom is gone via fresh reproduction, and the regression test is green.
-- Log a learning so the next session sees it:
-  ```bash
-  ~/.claude/skills/gstack/bin/gstack-learnings-log '{"skill":"ansh-debug","type":"investigation","key":"SHORT_KEY","insight":"ROOT_CAUSE_SUMMARY","confidence":9,"source":"observed","files":["path/to/file.ts"]}'
-  ```
+- Record the root cause as a durable learning inside the loop's own context — not an external
+  log. Append a short entry (key, one-line root-cause summary, confidence 1-10, affected files)
+  to `.ansh/plan.md` under a `## Learnings` section (create it if absent, at the end of the
+  file). This is what `/ansh-plan` reads on re-entry, and what makes "recurring bugs in the same
+  files" visible across sessions without a separate store.
 
 ## Blast-radius gate
 

@@ -4,7 +4,16 @@ Private Claude Code plugin bundling my personal `/ansh-*` Karpathy-loop skills (
 
 Private repo → visible only to me and my agents.
 
-## Install (terminal or Claude Code Web)
+## Install on another Mac (plain skills, bare names like `/ansh-loop`)
+
+```
+git clone https://github.com/anshvis/claude-skills-personal.git ~/claude-skills-personal
+~/claude-skills-personal/setup.sh
+```
+
+This symlinks `skills/ansh-*` and `ANSH*.md` into `~/.claude/skills/`. To update: `git -C ~/claude-skills-personal pull` (symlinks pick it up automatically).
+
+## Install as a plugin (Claude Code Web)
 
 ```
 /plugin marketplace add anshvis/claude-skills-personal

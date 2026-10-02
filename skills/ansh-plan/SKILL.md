@@ -1,6 +1,6 @@
 ---
 name: ansh-plan
-description: PLANNER role in the Karpathy loop. Takes a goal (a Linear ticket ID/URL, OR a plain task description) and produces a machine-readable list of small, independently-executable subtasks — each stamped with a recommended model + effort tier, explicit done-criteria, and the feature edge cases / failure modes to watch out for and test (the smart-model edge-case thinking, captured here and propagated to subagents via the .md packets). Runs at high effort with extended thinking. Absorbs the context-gathering and Linear ticket handling from solve-linear-ticket, but does NOT depend on Linear — a plain prose goal works too. Use when the user says "/ansh-plan", "plan this out", "decompose this", or at the start of /ansh-loop. Outputs a plan file the SPECIALIST (/ansh-task) and ORCHESTRATOR (/ansh-loop) consume.
+description: PLANNER role in the Karpathy loop. Takes a goal (a Linear ticket ID/URL, OR a plain task description) and produces a machine-readable list of small, independently-executable subtasks — each stamped with a recommended model + effort tier, explicit done-criteria, and the feature edge cases / failure modes to watch out for and test (the smart-model edge-case thinking, captured here and propagated to subagents via the .md packets). The plan also carries explicit goal-level guardrails (boundaries never crossed), acceptance criteria (the product/user-facing done bar), and exit criteria (loop-level stop conditions) — required by /ansh-loop before it will execute a project-scale plan, and useful context even for /ansh-small-loop. Phase 1 also recalls relevant prior decisions/meeting notes/Slack context from the Obsidian vault via /obsidian, folding anything load-bearing into plan.md. Runs at high effort with extended thinking, then puts the finished plan through a cross-model codex CLI challenge pass (invoked directly, per ANSH-codex.md) — codex adversarially attacks the decomposition (missing subtasks, wrong ordering, weak done-criteria, missed edge cases) and the findings fold back in before hand-off, so the plan is bulletproof. Absorbs the context-gathering and Linear ticket handling from solve-linear-ticket, but does NOT depend on Linear — a plain prose goal works too. Use when the user says "/ansh-plan", "plan this out", "decompose this", or at the start of /ansh-small-loop or /ansh-loop. Outputs a plan file the SPECIALIST (/ansh-task) and ORCHESTRATORS (/ansh-small-loop, /ansh-loop) consume.
 allowed-tools:
   - Bash
   - Read
@@ -98,14 +98,33 @@ Detect the input shape:
   - `slug` = 3-6 kebab-case words from the ticket title, rewritten to be specific and grep-able;
     strip filler ("fix", "the", "issue with"); lowercase ASCII, hyphens only.
   - Examples: `rev-669-availability-request-integration`, `rev-75-add-tag-to-edit-shift-sidebar`.
-  - **One branch per PR.** If the plan groups subtasks into sequenced PRs, each PR gets its own
-    `<tag-lower>-<slug>` branch named for the ticket that PR primarily serves. Never invent a
-    non-ticket branch name (e.g. `feature-x`) when a ticket exists.
+  - **One branch per PR, all named off the PARENT/epic ticket.** When the plan groups subtasks into
+    sequenced PRs under a parent, every PR branch uses `<parent-tag-lower>-<section-slug>` — the tag
+    is the **parent's**, the slug describes that PR's section (parent `REV-1157` →
+    `rev-1157-payrule-thresholds`, `rev-1157-hours-accumulator`). **Never name a branch after a child
+    ticket**: Linear auto-attaches on branch name, so a child-named branch links the PR to the child
+    and scatters the stack across the board. Never invent a non-ticket branch name (e.g. `feature-x`)
+    when a ticket exists.
+- **PR links go to the PARENT, always.** Children exist to scope and sequence the work; they do not
+  collect PR links. Record the parent id on the plan so the loop links every section PR and the
+  umbrella PR to that one ticket, keeping stacking/lineage in one place. Children may be referenced
+  in a PR body as plain-text scope context only — never in magic-word position.
 - **Status discipline (who moves what):** the planner transitions each in-scope ticket that is
   `triage`/`backlog`/`unstarted` to **In Progress** when its work begins (find `statusType="started"`
   via `list_issue_statuses`, then `save_issue`); the specialist (`/ansh-task`) confirms/sets its
   ticket to In Progress as it picks the subtask up; the GitHub integration owns `In Review`/`Done`
   — never set those by hand. On any Linear failure, surface it and continue — never block on a flip.
+
+### Recall vault context (`/obsidian`)
+
+Before or alongside the code read below, pull relevant context from the Obsidian vault via
+`/obsidian` — prior decisions, meeting notes, and Slack threads that already settled something
+about this ticket's topic(s), people, or repo area. This is context a codebase read and a Linear
+ticket alone won't surface (the *why* behind a constraint, an approach already ruled out in a
+sync). Query by the ticket's topic/person if one of the vault's canonical set applies, otherwise
+by the ticket ID or a free-text summary of the goal. Fold anything genuinely load-bearing into
+`plan.md`'s context/decisions section, with the note cited. Best-effort — if the vault is
+unavailable, note it in `plan.md` and continue; never block planning on it.
 
 Then read the code that matters — **deeply, not just enough to hand-wave.** Fan out `Explore`
 subagents to map the relevant subsystems, naming conventions, and prior art. You cannot write a
@@ -122,6 +141,37 @@ via `AskUserQuestion`. If the goal is genuinely fully specified, ask ONE sanity 
 
 Write a one-paragraph interpretation back to the conversation so the user can course-correct
 before you spend the planning compute.
+
+## Phase 2.5 — Guardrails + acceptance/exit criteria (goal-level, do not skip)
+
+Before decomposing, write down the three lists that let a project-scale run be handed to
+`/ansh-loop` and signed off on without you in the room. These are goal-level (once per plan), not
+per-subtask — a subtask's existing testable done-criteria already are its acceptance bar; don't
+duplicate a parallel list there. Keep the three genuinely distinct:
+
+- **`guardrails`** — boundaries this work must never cross, independent of whether it's "done."
+  Out-of-scope areas explicitly ruled out, "no schema change without a migration review," "no
+  writes to prod outside the standard pipeline," compliance/security lines, things the user said
+  not to touch. If nothing unusual applies, still write the baseline ones (never push to
+  `main`/`master`, never touch `.ansh/` into tracked git, etc. — inherited from the loop's hard
+  rules, but restate anything goal-specific).
+- **`acceptance_criteria`** — the goal-level, product/user-facing bar: what makes this genuinely
+  done from the requester's perspective, not just what's mechanically testable. Write these as
+  the answer to "how would a human verify this shipped correctly," pulling from the ticket/prose
+  goal and anything surfaced in Phase 2 clarification. Distinct from `definition_of_done` (which
+  stays as the one-line prose summary) — this is the itemized, presentable list a human confirms
+  before execution.
+- **`exit_criteria`** — the conditions that stop the loop regardless of whether acceptance
+  criteria are met: max iterations exhausted, a guardrail tripped, blocked on a human decision,
+  a whole-goal evaluation failing twice. These are what `termination.max_iterations` becomes when
+  written out as human-legible stop conditions, plus anything else specific to this goal's risk
+  profile (e.g. "stop if the migration touches a table with no rollback path").
+
+These three lists are read verbatim by `/ansh-loop`'s Step 1 human sign-off gate for
+project-scale goals — write them so they can be presented item by item, not as prose paragraphs.
+`/ansh-small-loop` doesn't gate on them the same way, but still benefits from having them written
+down; never skip this phase because the goal looks small — let the Step -1 scope gate in the
+orchestrator, not this phase, decide which loop runs.
 
 ## Phase 3 — Decompose into stamped subtasks
 
@@ -141,11 +191,13 @@ signal it isn't decomposed enough** — split it again. The whole point is to pu
 up into planning and keep execution cheap.
 
 Also stamp each subtask with a **fresh-eyes recommendation** for its evaluation (consumed by
-`/ansh-review`):
-- `none` — routine, evaluate in-session
-- `review-fresh` — touches auth / payments / migrations / destructive / data-loss → parallel
-  no-history Claude agents
-- `codex` — large or you want a cross-model orthogonal check
+`/ansh-review`). Note: `/ansh-review` now runs a **cross-model Codex pass on every evaluation** by
+default, so this stamp only signals when to add a HEAVIER mode on top of that baseline:
+- `codex` — the default. Cross-model review is the baseline for every subtask.
+- `review-fresh` — touches auth / payments / migrations / destructive / data-loss → ALSO run
+  parallel no-history Claude agents on top of the Codex pass.
+- `thermo-nuclear` — large structural change (new slice, consolidation merge, refactor >~10 files)
+  → ALSO run the maintainability swarm on top of the Codex pass.
 
 ## Phase 3.5 — Make every subtask packet-ready (do not skip)
 
@@ -201,6 +253,10 @@ decisions (and the answers to the questions you asked), the overall definition o
 subtask index with dependencies. This is the durable understanding — write it like a teammate
 will read it cold.
 
+Include the **guardrails / acceptance_criteria / exit_criteria** written in Phase 2.5, presented
+as three itemized lists (not folded into prose) so `/ansh-loop`'s Step 1 sign-off gate can quote
+them directly.
+
 Include a **feature-wide edge-case analysis** here: the failure modes and edge cases for the
 WHOLE goal (boundaries, empty/null, concurrency, timezone/DST, permissions, partial failure,
 idempotency, scale). This is the highest-leverage place to think about how the feature breaks —
@@ -214,25 +270,52 @@ and tests it. Edge cases that span subtasks stay flagged here for the whole-goal
 {
   "goal": "one-line restatement",
   "source": "REV-554 | prose",
-  "branch_suggestion": "rev-554-indices-for-db-query",
+  "parent_ticket": "REV-1157",
+  "branch_suggestion": "rev-1157-indices-for-db-query",
   "definition_of_done": "the overall bar",
+  "guardrails": [
+    "no schema change to `shift` without a migration review",
+    "no writes to prod outside the standard ingestion pipeline"
+  ],
+  "acceptance_criteria": [
+    "a manager can see the +4/+8 override applied after PTO without a page reload",
+    "the change is visible to QA on UAT before it ships to prod"
+  ],
+  "exit_criteria": [
+    "max_iterations exhausted on any subtask",
+    "a guardrail above is tripped",
+    "whole-goal evaluation (Step 3) fails twice"
+  ],
   "termination": { "max_iterations": 3, "quality_bar": "all done-criteria pass + /ansh-review clean" },
   "prs": [
-    { "id": "PR1", "branch": "rev-73-tag-rules-engine", "tickets": ["REV-73", "REV-77"], "subtasks": ["T1", "T2", "T3"] }
+    { "id": "PR1", "branch": "rev-1157-tag-rules-engine", "link_ticket": "REV-1157",
+      "scope_tickets": ["REV-73", "REV-77"], "subtasks": ["T1", "T2", "T3"] }
   ],
   "subtasks": [
     { "id": "T1", "title": "...", "tier": "standard", "model": "sonnet", "effort": "medium",
-      "deps": [], "fresh_eyes": "none", "linear_ticket": "REV-554", "pr": "PR1",
+      "deps": [], "fresh_eyes": "codex", "linear_ticket": "REV-73", "pr": "PR1",
       "packet": ".ansh/tasks/T1.md", "status": "todo" }
   ]
 }
 ```
 
-- `branch_suggestion` (and every `prs[].branch`) MUST follow `<tag-lower>-<slug>` from the ticket —
-  not a generic name. Single-PR plan → just `branch_suggestion`; sequenced PRs → one `prs[]` entry
-  per PR, each with its own ticket-derived `branch`.
-- `linear_ticket` (string or array) ties each subtask to the ticket(s) it advances. Omit only for
-  untracked scaffolding the user de-scoped.
+- `parent_ticket` is the **single ticket every PR in this plan links to** — the parent/epic. Required
+  whenever the goal has children. The loop reads it for magic-word linking on every PR.
+- `branch_suggestion` (and every `prs[].branch`) MUST follow `<tag-lower>-<slug>` using the
+  **`parent_ticket` tag**, not a child's — not a generic name either. Single-PR plan → just
+  `branch_suggestion`; sequenced PRs → one `prs[]` entry per PR, each with its own section slug.
+- `prs[].link_ticket` is always `parent_ticket` (it exists so the loop never has to infer it).
+  `prs[].scope_tickets` lists the child ticket(s) that PR advances — **plain-text scope context for
+  the PR body only, never magic-word linked**.
+- `linear_ticket` (string or array) ties each subtask to the child ticket(s) it advances, for planning
+  and traceability. It does **not** drive PR linking. Omit only for untracked scaffolding the user
+  de-scoped.
+- `guardrails`, `acceptance_criteria`, and `exit_criteria` are **goal-level, required whenever this
+  plan may be handed to `/ansh-loop`** (i.e. any project-scale goal) — that orchestrator refuses to
+  execute without all three. Write them even for a plan headed to `/ansh-small-loop`; they cost
+  little here and save a re-derivation if the goal turns out bigger than expected. Don't duplicate
+  `acceptance_criteria` per subtask — each subtask's own `Done-criteria` in its packet already
+  serves that role at the subtask level.
 
 ### 4c — `.ansh/tasks/<id>.md` — one self-contained packet per subtask (the important part)
 
@@ -243,10 +326,14 @@ entirely on its own:
 # T1 — <short imperative title>
 
 ## Linear ticket
-- **REV-554** (the ticket this subtask advances; branch `rev-554-<slug>`). On pickup, the specialist
-  ensures this ticket is **In Progress** (move it if it's still triage/backlog/unstarted). Do NOT
-  set In Review/Done — the GitHub integration owns those. Omit this section only for untracked
-  scaffolding the user de-scoped.
+- **Scope ticket: REV-73** (the child this subtask advances — planning/traceability only).
+- **Link ticket (parent): REV-1157** — the ONLY ticket that goes in magic-word position on the PR
+  ("Closes REV-1157"). Branch is named off the parent: `rev-1157-<section-slug>`. Reference the scope
+  ticket in the PR body as plain text only; never magic-word a child, and never name a branch after
+  one (Linear auto-attaches on branch name).
+- On pickup, the specialist ensures the **parent** is **In Progress** (move it if it's still
+  triage/backlog/unstarted). Do NOT set In Review/Done — the GitHub integration owns those. Omit
+  this section only for untracked scaffolding the user de-scoped.
 
 ## Objective
 <one or two sentences: exactly what "done" looks like for this slice>
@@ -272,6 +359,9 @@ how it connects to the pieces around it>
 - concurrent requests with the same idempotency key must not double-write
 - timezone: the cutoff compares against projector-local time, not UTC
 
+## Guardrails that apply to this slice (subset of the goal-level list)
+- no schema change to `shift` without a migration review
+
 ## Tests to write (the edge cases above, made checkable)
 - [ ] `foo.test.ts > rejects empty-string tenantId` (the boundary, not just missing)
 - [ ] `foo.test.ts > idempotent on duplicate key`
@@ -283,11 +373,52 @@ how it connects to the pieces around it>
 - [ ] all "Tests to write" above are green
 
 ## Stamp
-tier: standard | model: sonnet | effort: medium | fresh_eyes: none | deps: []
+tier: standard | model: sonnet | effort: medium | fresh_eyes: codex | deps: []
 ```
 
 Render the subtask table inline for the user too, and point them at `.ansh/plan.md` for the full
 picture.
+
+## Phase 5 — Codex challenge the plan (bulletproof gate, do not skip)
+
+Before you hand the plan to the loop, get a **cross-model adversarial read of the plan itself.**
+Claude wrote this decomposition, so Claude is blind to its own blind spots. Codex is the orthogonal
+mind that tries to break it.
+
+Run the codex CLI directly in **challenge mode** — binary/auth check, the exact invocation, and
+the presentation format all live in `~/.claude/skills/ANSH-codex.md` (read it, don't guess the
+command). Point it at the plan you just wrote (`.ansh/plan.md` + `.ansh/plan.json` + the
+`.ansh/tasks/*.md` packets). Frame the challenge explicitly around the decomposition, not the code
+(there's no code yet):
+
+- **Missing subtasks** — work the goal needs that no packet covers (migrations, backfill, feature
+  flags, rollout/rollback, telemetry, tests, docs).
+- **Wrong ordering / hidden dependencies** — a subtask that can't actually start until another
+  finishes, but isn't marked as a dep.
+- **Unhandled edge cases** — failure modes the feature-wide edge-case analysis missed. This is the
+  highest-value attack: a cross-model mind catches boundary/concurrency/permission cases Claude
+  glossed.
+- **Weak done-criteria** — criteria that are vibes, not testable; criteria that would pass while
+  the feature is still broken.
+- **Under-decomposed subtasks** — anything that's secretly Deep hiding as Standard, or too big for a
+  cheap specialist to execute from the packet alone.
+- **Wrong layering / pattern** — a packet that would push business logic into a repo, run raw SQL
+  outside a repo, or invent a pattern the codebase hasn't blessed.
+
+Then **fold the findings back in** before handing off:
+- Real gaps → add/split subtasks, fix ordering/deps, tighten done-criteria, enumerate the missed
+  edge cases into the owning packet's "Watch out for" / "Tests to write". Re-run the Phase 3.5
+  readiness checklist on anything you touched.
+- Rejected findings → note in `.ansh/plan.md` why (so the loop and a future you don't re-litigate).
+- If Codex surfaces a genuine product/scope/direction question you can't resolve from the code, it's
+  the user's call — `AskUserQuestion`, don't silently re-architect.
+
+If Codex is unavailable (the binary/auth check in `ANSH-codex.md` comes back `CODEX_UNAVAILABLE`),
+do a rigorous in-session adversarial self-challenge instead and note in `plan.md` that the
+cross-model plan challenge was skipped. Don't skip the adversarial pass entirely — just record
+that it wasn't cross-model.
+
+A plan that hasn't survived a Codex challenge is not ready to hand off.
 
 ## Re-entry — reframing a kicked-back subtask (planner owns direction)
 
@@ -312,13 +443,70 @@ When invoked to reframe a kicked-back subtask:
 
 ## STOP / hand-off
 
-Do not implement anything. End by telling the user:
+By default, do not implement anything. End by telling the user:
 - the subtask count and how many are Quick vs Standard (Deep should be zero — flag if not),
+- **the Codex challenge outcome** — what it found and how you folded it in (or that it was skipped
+  because Codex was unavailable),
+- the **guardrails / acceptance_criteria / exit_criteria** lists, rendered inline — these are what
+  a human confirms next, whichever loop runs them,
 - that `.ansh/plan.md` holds the high context and each `.ansh/tasks/<id>.md` is a self-contained
   packet,
-- that `/ansh-loop` will execute it, or `/ansh-task T1` runs a single subtask.
+- which orchestrator should run it: **`/ansh-small-loop`** for one scoped ticket, or **`/ansh-loop`**
+  for project-scale work (which will re-present guardrails/acceptance/exit criteria for sign-off
+  before executing) — or `/ansh-task T1` to run a single subtask directly — **or, if the user
+  explicitly authorizes immediate execution, go straight to Phase 6 below instead of stopping here.**
+
+## Phase 6 — Direct dynamic-Workflow execution (only when explicitly authorized)
+
+Planning and execution are separate roles in the Karpathy loop, and `/ansh-loop`'s
+guardrail/acceptance/exit-criteria sign-off gate exists precisely so project-scale execution never
+starts without a human confirming it first. **Never skip that gate on your own initiative** — the
+default is still the STOP above.
+
+But when the user's request — in the same turn that triggered this planning pass, or an immediately
+following message — explicitly directs you to run the fleet now ("run it", "fleet these", "yes,
+execute this via a workflow," "kick off the agents"), treat that as the sign-off for the subtasks
+covered by this plan and dispatch directly, without a second confirmation round-trip:
+
+- Build a Workflow script (the `Workflow` tool) that turns each ready packet into an `agent()` call.
+  Prompt each agent to read its `.ansh/tasks/<id>.md` packet in full and execute it exactly — Files
+  to change, Answered questions, Guardrails, self-verify against Done-criteria before finishing.
+  If an agent's isolation (e.g. a fresh worktree) won't reliably have `.ansh/` on disk, inline the
+  packet's content directly into the prompt rather than just pointing at a path.
+- Respect `plan.json`'s `deps` edges: independent subtasks fan out via `parallel()`/`pipeline()`;
+  a dependency chain becomes sequential stages. Don't flatten a real dependency into parallel just
+  because the Workflow tool makes parallel easy.
+- **`isolation: "worktree"` is a concurrency property, not a file-sensitivity property — this is
+  the mistake to avoid.** Isolation gives an `agent()` call a FRESH checkout branched off the base
+  commit, with zero visibility into any other agent's (even an already-finished one's) uncommitted
+  worktree changes — a Workflow script has no filesystem access to bridge state between worktrees.
+  Isolate a subtask ONLY when it runs inside the same `parallel()` call as another subtask touching
+  overlapping files (per the file-collision map from Phase 3/3.5) — i.e. only leaves of the
+  dependency graph with no in-run consumer. **Never isolate a subtask that has an in-run dependent**
+  (anything another subtask's `deps` points at): run that whole connected chain unisolated, in the
+  shared invoking directory, sequential `await agent()` calls — sequencing alone already guarantees
+  single-writer-at-a-time, so isolation buys nothing there and actively breaks the dependent stage's
+  ability to see the code it needs. If a wave boundary forces the dependency across two separate
+  `Workflow` calls, reconcile manually (Bash, outside the script) by copying the upstream stage's
+  actual changed files into the shared directory before the next call — the script cannot do this
+  itself.
+- **Hold back any subtask whose packet names an unlanded prerequisite** (a blocking ticket, PR, or
+  shared piece of infra — e.g. a feature flag another packet depends on) — dispatch only what's
+  actually unblocked, and say explicitly, in the same message, what you held back and why. Do not
+  silently drop a held-back subtask from the report.
+- A Workflow run finishing is not the finish line. After it completes, the result routes through the
+  normal loop exactly as if `/ansh-loop`/`/ansh-small-loop` had dispatched it: `/ansh-review` per
+  subtask (or a batched pass), then `/ansh-resolve` once PRs are up. Don't report a subtask as
+  "done" on the strength of the agent's own return value alone.
+
+This does not lower the bar for genuinely project-scale, high-guardrail work — that class of goal
+still routes to `/ansh-loop` for its sign-off gate even if the user says "run it," because the sign-off
+IS the guardrail walkthrough, not a rubber stamp `/ansh-plan` can substitute for on a plan it just
+wrote itself. Phase 6 is for the case where the user has already said "go" on a batch of
+independently-scoped, non-project-scale subtasks in this same planning pass.
 
 ## Completion status
 
-End with **DONE** (plan written), **NEEDS_CONTEXT** (blocked on a user answer), or
+End with **DONE** (plan written), **DONE — DISPATCHED** (plan written and a Phase 6 Workflow was
+launched; name what ran and what was held back), **NEEDS_CONTEXT** (blocked on a user answer), or
 **DONE_WITH_CONCERNS** (plan written but a subtask wouldn't decompose below Deep — name it).
