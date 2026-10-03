@@ -43,7 +43,7 @@ Be thorough on *capture*, not clever.
    git rev-parse --abbrev-ref HEAD
    git log --oneline -15
    git status --short
-   git log --oneline origin/dev..HEAD          # what's on this branch vs base
+   git log --oneline origin/main..HEAD          # what's on this branch vs base
    gh pr view --json number,title,url,state,statusCheckRollup 2>/dev/null
    gh pr checks 2>/dev/null
    ```

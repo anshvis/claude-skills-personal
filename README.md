@@ -1,6 +1,6 @@
 # ansh-personal skills
 
-Private Claude Code plugin bundling my personal `/ansh-*` Karpathy-loop skills (orchestrator + plan/task/review/debug/resolve/save), the glue skills they call (effort-dial, chill-describe, gold-star, linear-sync, lightweight-sql), and web-handoff/web-read. `ANSH.md` is the loop index.
+Private Claude Code plugin bundling my personal `/ansh-*` Karpathy-loop skills (orchestrator + plan/task/review/codex/debug/resolve/save), the glue skills they call (effort-dial, chill-describe, gold-star, linear-sync, lightweight-sql), and web-handoff/web-read. `ANSH.md` is the loop index.
 
 Private repo → visible only to me and my agents.
 
@@ -11,7 +11,7 @@ git clone https://github.com/anshvis/claude-skills-personal.git ~/claude-skills-
 ~/claude-skills-personal/setup.sh
 ```
 
-This symlinks every folder in `skills/` and `ANSH*.md` into `~/.claude/skills/`. To update: `git -C ~/claude-skills-personal pull` (symlinks pick it up automatically).
+This symlinks every `skills/*` and `ANSH*.md` into `~/.claude/skills/`, and `agents/*` into `~/.claude/agents/`. To update: `git -C ~/claude-skills-personal pull` (symlinks pick it up automatically).
 
 ## Install as a plugin (Claude Code Web)
 

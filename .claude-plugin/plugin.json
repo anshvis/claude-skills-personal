@@ -1,6 +1,6 @@
 {
   "name": "ansh-personal",
-  "description": "Ansh's personal Karpathy-loop skills: /ansh-loop (orchestrator) + plan/task/review/debug/resolve/save, plus glue (effort-dial, chill-describe, gold-star, linear-sync, lightweight-sql) and web-handoff/web-read.",
+  "description": "Ansh's personal Karpathy-loop skills: /ansh-loop (orchestrator) + plan/task/review/codex/debug/resolve/save, plus glue (effort-dial, chill-describe, gold-star, linear-sync, lightweight-sql, review-fresh) and web-handoff/web-read.",
   "version": "1.0.0",
   "author": {
     "name": "Ansh Viswanathan",

@@ -44,7 +44,7 @@ state, so a fresh session on another device resumes with zero re-derivation.
 Collect, in this order:
 - **Goal** — the ticket/prose driving the work, and the definition of done.
 - **Repo state** — `git rev-parse --abbrev-ref HEAD` (branch), `git rev-parse HEAD` (sha),
-  `git log --oneline -15`, `git status --short`. Note the base branch (usually `dev`).
+  `git log --oneline -15`, `git status --short`. Note the base branch (usually `main`).
 - **PRs / CI** — `gh pr list --head <branch>` and for each open PR `gh pr view <n> --json
   number,title,url,state,baseRefName,statusCheckRollup` (state + check summary). Capture stacked-PR
   bases if relevant.
@@ -72,7 +72,7 @@ that content, placed in a tracked repo file instead of git-excluded `.ansh/`.
   repo: vitalizecare/web-app
   branch: <branch>
   head: <sha>
-  base: dev
+  base: main
   prs: [#11876, #11877, ...]
   updated: <ISO date — stamp it from `date -u`, do not invent>
   ```

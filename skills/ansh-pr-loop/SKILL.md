@@ -15,9 +15,9 @@ allowed-tools:
   - Monitor
   - TaskList
   - PushNotification
-  - mcp__linear-server__get_issue
-  - mcp__linear-server__list_comments
-  - mcp__linear-server__save_comment
+  - mcp__claude_ai_Linear__get_issue
+  - mcp__claude_ai_Linear__list_comments
+  - mcp__claude_ai_Linear__save_comment
 ---
 
 # /ansh-pr-loop — recurring drive-to-green PR loop

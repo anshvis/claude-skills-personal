@@ -11,10 +11,10 @@ allowed-tools:
   - AskUserQuestion
   - Agent
   - Skill
-  - mcp__linear-server__get_issue
-  - mcp__linear-server__list_comments
-  - mcp__linear-server__save_comment
-  - mcp__linear-server__save_issue
+  - mcp__claude_ai_Linear__get_issue
+  - mcp__claude_ai_Linear__list_comments
+  - mcp__claude_ai_Linear__save_comment
+  - mcp__claude_ai_Linear__save_issue
 ---
 
 # /ansh-small-loop — Orchestrator (small, scoped tickets)
@@ -47,17 +47,17 @@ right-size → PLAN → ┌─► TASK ─► REVIEW ─┬─ PASS ──► SH
 - **`/chill-describe` is mandatory** before any `git commit` / `gh pr create` / `gh pr edit
   --body`. No co-author trailer, no emoji, no "Generated with" footer.
 - **Use an integration branch; land the work as many SMALL PRs that merge into it, not one big
-  PR to `dev`.** For any non-trivial goal, the ticket's branch (e.g. `rev-746-...`) is a long-lived
-  **integration branch** that has exactly one PR → `dev` (the umbrella "main" PR for the epic). The
+  PR to `main`.** For any non-trivial goal, the ticket's branch (e.g. `rev-746-...`) is a long-lived
+  **integration branch** that has exactly one PR → `main` (the umbrella "main" PR for the epic). The
   actual work arrives as a stack of **small section PRs that target the integration branch, not
-  `dev`** — each one a tight, independently-reviewable diff (a few files: one layer/subtask, e.g.
+  `main`** — each one a tight, independently-reviewable diff (a few files: one layer/subtask, e.g.
   the schema+migration, the concept, the resolver, the projector, the fetch, the cron, the alerts).
-  A reviewer approves each small section against the integration branch; the umbrella PR to `dev`
+  A reviewer approves each small section against the integration branch; the umbrella PR to `main`
   is then the sum, already reviewed in pieces. **A section PR does NOT need to compile/ship against
-  `dev` on its own** — that's the whole point of the integration branch, and it's what lets you cut
+  `main` on its own** — that's the whole point of the integration branch, and it's what lets you cut
   far smaller PRs than "independently mergeable" would allow. Size test: if a section PR touches
-  more than ~8–10 files or mixes layers, split it. A 26-file PR to `dev` is a failure of this rule.
-  Topology: `integration → dev` (umbrella); `section-1 → integration`, `section-2 → integration`, …
+  more than ~8–10 files or mixes layers, split it. A 26-file PR to `main` is a failure of this rule.
+  Topology: `integration → main` (umbrella); `section-1 → integration`, `section-2 → integration`, …
   (small, merged in order). `/ansh-plan` records the integration branch + the ordered section PRs
   (each → integration) in `plan.json.prs`; the orchestrator opens/merges sections small-first, then
   the umbrella.
@@ -193,7 +193,7 @@ Walk the subtasks in dependency order. For each:
    - If it returns **BLOCKED** (environment/tooling): surface to the user.
 2. **`/ansh-review`** for that subtask — scores against its done-criteria. It runs a **cross-model
    Codex review pass by default on every evaluation** (that's where the real bugs surface), and adds
-   `review-fresh` / `thermo-nuclear` on top when the fresh-eyes stamp or risk calls for it.
+   `review-fresh` / `swarm` on top when the fresh-eyes stamp or risk calls for it.
 3. Branch on the verdict:
    - **PASS** → next subtask.
    - **REVISE** → feed the specific blockers back to `/ansh-task` (or to `/ansh-plan` if the
@@ -214,8 +214,8 @@ landing gate.
 
 ## Step 4 — SHIP (integration branch + small section PRs)
 
-Ship as an integration branch with small section PRs merging into it — never one big PR to `dev`.
-1. **Open the umbrella PR once:** `integration-branch → dev`, titled/linked to the parent/epic
+Ship as an integration branch with small section PRs merging into it — never one big PR to `main`.
+1. **Open the umbrella PR once:** `integration-branch → main`, titled/linked to the parent/epic
    ticket. Keep it as the running sum; it stays open while sections land.
 2. **For each section, small-first, in dependency order:** cut a section branch off the integration
    branch — named `<parent-tag-lower>-<section-slug>`, never after a child ticket — commit its small
@@ -230,7 +230,7 @@ Ship as an integration branch with small section PRs merging into it — never o
    order. Create/update PRs directly with `git push` + `gh pr create` / `gh pr edit --body` — if
    a PR template gets auto-injected into the body, overwrite it with the chill-describe-compliant
    text before handing the URL back.
-4. Post each section PR URL back (note its base = the integration branch). The umbrella PR to `dev`
+4. Post each section PR URL back (note its base = the integration branch). The umbrella PR to `main`
    merges last, once all sections are in and green.
 
 ## Step 5 — RESOLVE (outer loop)

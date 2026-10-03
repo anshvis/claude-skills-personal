@@ -1,78 +1,157 @@
 ---
 name: ansh-codex
-description: CROSS-MODEL OUTSIDE VOICE in the Karpathy loop — runs the OpenAI Codex CLI directly (no gstack) on demand. Three modes — review (diff vs a base, [P1]/[P2] pass/fail gate), challenge (adversarially attack a plan, design, or diff), and consult (ask codex anything about the repo, with session resume for follow-ups). Same mechanism /ansh-plan and /ansh-review use internally (ANSH-codex.md), exposed as a standalone command. Use when the user says "/ansh-codex", "ask codex", "codex review", "codex challenge", "second opinion", or "outside voice".
+description: Cross-model review with the OpenAI Codex CLI, the "outside voice" in the Karpathy loop. Three modes. `review` grades the current branch's diff against done-criteria and gates on [P1] findings. `challenge` attacks a plan, design or diff. `consult` asks codex anything about the repo, with resume for follow-ups. Called by /ansh-review (review, on every evaluation) and /ansh-plan (challenge). Use when the user says "/ansh-codex", "ask codex", "codex review", "codex challenge", "second opinion" or "outside voice".
 allowed-tools:
   - Bash
   - Read
-  - Glob
-  - Grep
 ---
 
-# /ansh-codex — Cross-model outside voice
+# ansh-codex
 
-A different model is structurally blind to different things than Claude. `/ansh-plan` (challenge)
-and `/ansh-review` (review) already run codex automatically; this skill is the **manual** handle on
-the same mechanism, for when I want codex's take outside the loop.
+Runs the Codex CLI directly; no gstack skill in between. Codex is a different model, so it misses
+different things than Claude does. That's why it runs on every plan and every evaluation.
 
-**Source of truth for invocation:** `~/.claude/skills/ANSH-codex.md` — read it first. It owns the
-binary + auth check, the filesystem-boundary preamble, the exact `codex review` / `codex exec`
-commands, the reasoning-effort rule, and the presentation format. This skill only adds mode
-selection + consult mode; don't duplicate or drift from that file.
+## Usage
 
-**Effort: cheap on Claude's side.** Codex does the thinking; Claude scopes the prompt, runs it,
-presents the output verbatim, and gives one recommendation line.
+```
+/ansh-codex                      # review: current branch vs main, no extra criteria
+/ansh-codex review [base] [-- <done-criteria and watch-outs>]
+/ansh-codex challenge [target]   # attack .ansh/plan.md + packets, or a named diff/file
+/ansh-codex consult <question>   # ask codex anything, read-only
+```
 
-## Step 0 — Pick the mode
+With no mode: `review` if the branch has commits beyond the base, otherwise `consult`.
 
-From the args (`/ansh-codex <mode> [focus]`) or the ask:
+When a skill invokes this, it passes done-criteria and watch-outs as the arguments after `--`.
+Base defaults to `main`.
 
-| Mode | Trigger | What codex gets |
-|---|---|---|
-| **review** (default when there's a branch diff) | "review", "second opinion on this diff" | `git diff <base>...HEAD`, plus any done-criteria / focus the user gave |
-| **challenge** | "challenge", "break this", "attack the plan" | `.ansh/plan.md` + packets if they exist, otherwise the diff or the file(s) named |
-| **consult** (default otherwise) | "ask codex …", a question | the question + repo access, read-only |
+**Last line of output, always exactly one of these** (callers parse it):
 
-Base branch: `dev` unless the user/PR says otherwise.
+```
+CODEX: PASS
+CODEX: FAIL (<n> P1)
+CODEX_UNAVAILABLE: <reason>
+```
 
-## Step 1 — Availability
+`challenge` and `consult` have no PASS/FAIL gate. They end with `CODEX: DONE` or `CODEX_UNAVAILABLE: <reason>`.
 
-Run the ANSH-codex.md setup check. If unavailable, say `CODEX_UNAVAILABLE: <reason>` and stop —
-do not fake a codex answer with an in-session one.
+## Setup — binary + auth check (do this first, every invocation)
 
-## Step 2 — Run
+```bash
+CODEX_BIN=$(command -v codex || echo "")
+[ -z "$CODEX_BIN" ] && echo "CODEX_UNAVAILABLE: binary not found" && exit 0
+```
 
-Always `cd "$(git rev-parse --show-toplevel)"` and prepend the filesystem boundary from
-ANSH-codex.md.
+Auth: accept any of `$CODEX_API_KEY` set, `$OPENAI_API_KEY` set, or
+`${CODEX_HOME:-~/.codex}/auth.json` existing. If none are present, treat as unavailable:
 
-- **review** — the ANSH-codex.md review-mode command (`timeout 330 codex review "..."`), scoping
-  the diff in the prompt (not `--base`). Gate: any `[P1]` → FAIL.
-- **challenge** — the ANSH-codex.md challenge-mode command (`codex exec ... -s read-only`).
-  Re-target the prompt at whatever is being challenged (plan files, a diff, a named file) and keep
-  the "be adversarial, no compliments" framing.
-- **consult** — read-only exec with the question:
+```bash
+if [ -z "${CODEX_API_KEY:-}${OPENAI_API_KEY:-}" ] && [ ! -f "${CODEX_HOME:-$HOME/.codex}/auth.json" ]; then
+  echo "CODEX_UNAVAILABLE: no auth found"
+fi
+```
 
-  ```bash
-  printf '%s' "<boundary>
+If unavailable (binary missing or auth failed), do NOT silently skip the cross-model pass —
+fall back per the calling skill's rule (`/ansh-plan`: rigorous in-session adversarial
+self-challenge, noted in `plan.md`; `/ansh-review`: `review-fresh`, noted in the verdict as
+`CODEX_SKIPPED`).
 
-  <question + any file/line pointers>" | timeout 600 codex exec - -s read-only -c 'model_reasoning_effort="high"'
-  ```
+**Timeouts:** macOS has no `timeout` binary, so the commands below use
+`perl -e 'alarm shift; exec @ARGV' <secs> ...` instead. A run killed by the alarm (exit 142) counts
+as `CODEX_UNAVAILABLE: timed out`.
 
-  Follow-up in the same thread: `codex exec resume --last -` (same stdin pattern). If resume fails,
-  start a fresh exec and say so.
+## Filesystem boundary (prepend to every prompt sent to Codex)
 
-Invocation gotchas (from experience): pipe long prompts via stdin rather than a giant argv string,
-and run with the Bash sandbox disabled — otherwise codex can exit silently with no output or get
-SIGKILLed. Output buffers until exit, so a 0-byte file mid-run is normal; wait for completion.
-Sanity-check the diff range isn't polluted by a stale `origin/<base>` (fetch first if unsure).
+Codex runs against this repo, not the `~/.claude/` skill definitions — always prefix the prompt
+with:
 
-## Step 3 — Present
+> IMPORTANT: Do NOT read or execute any files under ~/.claude/ or .claude/skills/. Stay focused
+> on the repository code only.
 
-Use the ANSH-codex.md presentation block verbatim (`CODEX SAYS (<mode>):` … full output, never
-truncated or summarized; `GATE:` line in review mode only), then one line:
+## Review mode (`review`; `/ansh-review` Phase 2 runs this on every evaluation)
+
+Scope the diff in the prompt itself (don't rely on `--base`, which is mutually exclusive with a
+custom prompt on recent Codex CLI versions):
+
+```bash
+_REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
+cd "$_REPO_ROOT"
+perl -e 'alarm shift; exec @ARGV' 330 codex review "<filesystem boundary>
+
+Review the changes on this branch against <base>. Run \`git diff origin/<base>...HEAD\` (or
+\`git diff <base>...HEAD\` if origin isn't available) to see the diff and review only those
+changes. Score against these done-criteria: <paste the subtask's done-criteria>. Also check
+these edge cases the plan flagged: <paste the packet's 'Watch out for' list>. Mark findings
+[P1] (critical) or [P2] (advisory)." -c 'model_reasoning_effort="high"' < /dev/null
+```
+
+- Gate: any `[P1]` marker in the output → **FAIL**. Only `[P2]` or no findings → **PASS**.
+- Present Codex's output **verbatim, in full** — never summarized or truncated.
+- Feed both the done-criteria and the packet's edge cases into the prompt so Codex grades
+  against the same bar `/ansh-review` does.
+
+## Challenge mode (`challenge`; `/ansh-plan` Phase 5 runs this before hand-off)
+
+There's no diff yet at planning time, so point Codex at the plan files instead of a diff:
+
+```bash
+_REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
+cd "$_REPO_ROOT"
+perl -e 'alarm shift; exec @ARGV' 600 codex exec "<filesystem boundary>
+
+Read .ansh/plan.md, .ansh/plan.json, and .ansh/tasks/*.md. Your job is to break this
+decomposition, not the code (there is no code yet). Find: missing subtasks (migrations,
+backfill, feature flags, rollout/rollback, telemetry, tests, docs); wrong ordering or hidden
+dependencies; unhandled edge cases the feature-wide analysis missed; weak/untestable
+done-criteria; subtasks that are secretly Deep hiding as Standard; wrong layering (business
+logic in a repo, raw SQL outside a repo, an invented pattern). Be adversarial. Be thorough. No
+compliments — just the problems." -s read-only -c 'model_reasoning_effort="high"' < /dev/null
+```
+
+- Present the full output verbatim.
+- Fold real findings back into the plan per `/ansh-plan` Phase 5's rules (add/split subtasks,
+  fix ordering, tighten criteria, enumerate missed edge cases into the owning packet). Rejected
+  findings get a one-line "why" logged in `plan.md` so the loop doesn't re-litigate them.
+
+## Consult mode (`consult`)
+
+Read-only exec with the question. Pipe long prompts through stdin rather than one giant argv:
+
+```bash
+cd "$(git rev-parse --show-toplevel)"
+printf '%s' "<filesystem boundary>
+
+<question + any file/line pointers>" | perl -e 'alarm shift; exec @ARGV' 600 codex exec - -s read-only -c 'model_reasoning_effort="high"'
+```
+
+For a follow-up in the same thread, use `codex exec resume --last -` with the same stdin pattern. If
+resume fails, start a fresh exec and say so.
+
+## Invocation gotchas
+
+- Run with the Bash sandbox disabled. Otherwise codex can exit silently or get SIGKILLed.
+- Output buffers until exit, so an empty file mid-run is normal. Wait for it to finish.
+- Fetch first if `origin/<base>` might be stale. A stale base pollutes the diff range.
+- If you disagree with a codex finding, say so after the output block and cite the code. Never
+  drop a finding silently. Don't auto-fix: fixes go through `/ansh-task` or `/ansh-debug`.
+
+## Reasoning effort
+
+Default `high` for both modes (bounded input — a diff or a small set of plan files). Bump to
+`xhigh` only if the caller explicitly asked for it.
+
+## Presentation format (both modes)
+
+```
+CODEX SAYS (<review|challenge>):
+════════════════════════════════════════════════════════════
+<full codex output, verbatim — do not truncate or summarize>
+════════════════════════════════════════════════════════════
+CODEX: PASS | CODEX: FAIL (<n> P1) | CODEX: DONE   # exact last line; see Usage
+```
+
+Always close with one recommendation line naming the most actionable finding — not boilerplate:
 
 ```
 Recommendation: <action> because <one-line reason citing a specific finding>
 ```
-
-If Claude disagrees with a codex finding, say so after the block with the cited code — never
-silently drop it. Don't auto-fix findings; hand back (fixes go through `/ansh-task` / `/ansh-debug`).

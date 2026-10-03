@@ -3,7 +3,7 @@
 The authoritative, precise list of the skills I drive my work with. Everything under the
 `/ansh-` prefix is **mine — edited, current, and trustworthy**. Non-`/ansh-` project skills
 (`/chill-describe`, `/gold-star`, `/linear-sync`, `/lightweight-sql`, `/effort-dial`,
-`/review-fresh`, `thermo-nuclear-code-quality-review`, `/loop`) are dependencies these call by
+`/review-fresh`, `/loop`) are dependencies these call by
 name; I keep `/ansh-` as the master set. I don't lean on gstack day-to-day anymore, so the
 `/ansh-` skills describe their own logic directly (codex CLI invocation, PR creation, etc.)
 rather than delegating to gstack skills.
@@ -24,12 +24,11 @@ the absolute level slides with the goal.
 | **`/ansh-small-loop`** | Orchestrator (small) | Opus, conductor | For small, scoped tickets only. Runs plan→execute→evaluate→revise→ship→resolve as a closed loop with explicit termination. A project-scale goal (spans a Linear project, needs a real architecture/product call, shape not settled) gets handed off to `/ansh-loop` at Step -1. |
 | **`/ansh-loop`** | Orchestrator (project) | Opus, conductor | For project-scale goals only — spans a Linear project/multiple parent tickets. Runs strictly after `/ansh-plan` has produced guardrails + acceptance_criteria + exit_criteria; gates on an explicit human sign-off of those three lists (`AskUserQuestion`, no auto-pick) before any execution; then fans out subtasks/sections via dynamic **Workflows** (`pipeline()`/`parallel()`) instead of a serial walk. A single scoped ticket gets redirected to `/ansh-small-loop`. |
 | **`/ansh-plan`** | Planner | **Opus high → Opus high + extended thinking** (top) | Goal (Linear OR prose) → machine-readable subtask list, each stamped with model + effort + done-criteria + edge cases. Then a **codex CLI challenge pass** attacks the plan (missing subtasks, bad ordering, weak criteria, missed edge cases) before hand-off. Linear-optional. |
-| **`/ansh-review`** | Evaluator | **Opus medium → Opus high + thinking** (one below planner) | Thinking role; never cheap. Scores output vs done-criteria, verifies flagged edge cases. Runs a **cross-model codex CLI review pass on every evaluation** as the baseline bug hunt; adds review-fresh / thermo-nuclear on top for high-risk. Returns PASS / REVISE / DEBUG. |
+| **`/ansh-review`** | Evaluator | **Opus medium → Opus high + thinking** (one below planner) | Thinking role; never cheap. Scores output vs done-criteria, verifies flagged edge cases. Runs a **cross-model codex CLI review pass on every evaluation** as the baseline bug hunt; adds review-fresh / swarm on top for high-risk. Returns PASS / REVISE / DEBUG. |
 | **`/ansh-debug`** | Bug feedback loop | **Sonnet medium → Opus med/high** (only climbs when stuck) | Starts cheap — review/comments already handed it a lead. Root-causes, emits fix-subtasks, dispatches through `/ansh-task`. 3-strike rule = escalation trigger. |
 | **`/ansh-task`** | Specialist | **Sonnet low → Sonnet medium** (cheap execution) | Executes ONE scoped subtask, self-verifies against its done-criteria, stops. Minimal ceremony. Kicks back if low-conviction. |
 | **`/ansh-resolve`** | Outer loop | Sonnet/Opus, medium | Post-push: combs CI checks + bot/human review comments + Linear; triages; dispatches fixes; closes threads. |
 | **`/ansh-pr-loop`** | Recurring outer loop | Sonnet/Opus, medium | Runs `/ansh-resolve` on a ~5-min self-pacing cadence until CI is green and no review blocks — dismisses a stuck BOT review once its findings are verifiably fixed (never dismisses a human review), then asks before merging. Use to babysit a PR to mergeable instead of one manual `/ansh-resolve` pass. |
-| **`/ansh-codex`** | Outside voice (manual) | Codex CLI high; Claude cheap | On-demand cross-model pass — `review` (diff vs base, `[P1]` = FAIL), `challenge` (attack a plan/design/diff), or `consult` (ask codex anything, resumable). Same mechanism `/ansh-plan` + `/ansh-review` run automatically (`ANSH-codex.md`), no gstack. |
 | **`/ansh-save`** | Handoff / context-freeze | Sonnet, cheap | Stopping mid-stream: freezes the chat-only context (goal, done/not-done, repo state, decisions + why, landmines, next steps) into a resumable `.ansh/saves/<date>-<slug>.md`. A fresh session resumes cold from it. Not memory, not a plan. |
 
 ## The plan→task contract (self-contained packets + conviction gate)
@@ -68,11 +67,10 @@ strongest second agent is a different model:
 - **in-session adversarial** — always run alongside Codex, free; its findings feed the same verdict.
 - **`review-fresh`** — auth / payments / migrations / destructive / data-loss. Parallel Claude
   agents with NO chat history; kills tunnel-vision. Runs ON TOP of the Codex pass. Needs a clean
-  tree (rebases onto `dev`).
-- **`thermo-nuclear`** — strict maintainability audit (thermo-nuclear-code-quality-review skill:
-  code-judo, 1k-line rule, spaghetti blockers) + a Workflow swarm of pr-review-* dimension
-  reviewers with adversarial verification of every finding. On top of the Codex pass, for large
-  structural diffs, consolidation merges, or when asked for "thermonuclear".
+  tree (rebases onto `main`).
+- **`swarm`**: a Workflow swarm of pr-review-* dimension reviewers (in `agents/`) with
+  adversarial verification of every finding. On top of the Codex pass, for large structural
+  diffs, consolidation merges, or when asked for a swarm.
 - Codex vs in-session disagreement → re-read the cited code; if unresolved, escalate to
   `review-fresh` to break the tie. Never silently drop a Codex finding.
 
@@ -89,10 +87,6 @@ duplicate them under `/ansh-`:
 - **`gold-star`** — hold work to a named reference implementation. Surface divergence in review.
 - **`linear-sync`** — reconcile a ticket with reality after shipping.
 - **`lightweight-sql`** — minimize DB load on any SQL/Drizzle diff.
-- **`obsidian`** — read-only recall from the `~/vitalize` Obsidian vault (Slack/Linear/Granola
-  notes, kept fresh by a separate weekday cron). `/ansh-plan` Phase 1 pulls from it for prior
-  decisions/meeting context a codebase read alone won't surface; any other `/ansh-` skill may
-  call it ad hoc.
 
 ## CLI arsenal (reference, not a skill)
 
@@ -104,11 +98,10 @@ live in `~/.config/ansh-cli/env.sh` (git-excluded, chmod 600); source it before 
 **pull the primary source yourself instead of asking the human to paste a log** — but keep it
 read-only, and name any missing token rather than working around it.
 
-**`ANSH-codex.md`** (sibling of this file) — the codex CLI invocation reference `/ansh-plan`
-(Phase 5, challenge mode), `/ansh-review` (Phase 2, review mode), and `/ansh-codex` (manual) pull from directly: binary +
-auth check, the exact `codex review` / `codex exec` invocations, output-gate parsing, and the
-unavailable-fallback rule. No gstack dependency — this is the whole mechanism, not a pointer to
-one.
+**`/ansh-codex`**: the codex CLI skill. `/ansh-plan` calls it in `challenge` mode (Phase 5) and
+`/ansh-review` in `review` mode (Phase 2). It owns the binary and auth check, the exact
+`codex review` / `codex exec` invocations, the output gate (`CODEX: PASS|FAIL|...`) and the
+unavailable fallback. You can also run it directly on any branch. No gstack dependency.
 
 ## Relationship to /solve-linear-ticket
 
@@ -146,7 +139,7 @@ Project-scale goal:
   → Step 2: Workflow fans out section 1 + section 2 (independent) via pipeline()/parallel();
             section 3 waits on section 1's deps
   → whole-goal eval vs acceptance_criteria → PASS
-  → 4 section PRs → integration branch → umbrella PR → dev
+  → 4 section PRs → integration branch → umbrella PR → main
   → /ansh-resolve per section as each lands
   → DONE
 ```

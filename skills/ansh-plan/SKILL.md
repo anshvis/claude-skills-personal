@@ -1,6 +1,6 @@
 ---
 name: ansh-plan
-description: PLANNER role in the Karpathy loop. Takes a goal (a Linear ticket ID/URL, OR a plain task description) and produces a machine-readable list of small, independently-executable subtasks — each stamped with a recommended model + effort tier, explicit done-criteria, and the feature edge cases / failure modes to watch out for and test (the smart-model edge-case thinking, captured here and propagated to subagents via the .md packets). The plan also carries explicit goal-level guardrails (boundaries never crossed), acceptance criteria (the product/user-facing done bar), and exit criteria (loop-level stop conditions) — required by /ansh-loop before it will execute a project-scale plan, and useful context even for /ansh-small-loop. Phase 1 also recalls relevant prior decisions/meeting notes/Slack context from the Obsidian vault via /obsidian, folding anything load-bearing into plan.md. Runs at high effort with extended thinking, then puts the finished plan through a cross-model codex CLI challenge pass (invoked directly, per ANSH-codex.md) — codex adversarially attacks the decomposition (missing subtasks, wrong ordering, weak done-criteria, missed edge cases) and the findings fold back in before hand-off, so the plan is bulletproof. Absorbs the context-gathering and Linear ticket handling from solve-linear-ticket, but does NOT depend on Linear — a plain prose goal works too. Use when the user says "/ansh-plan", "plan this out", "decompose this", or at the start of /ansh-small-loop or /ansh-loop. Outputs a plan file the SPECIALIST (/ansh-task) and ORCHESTRATORS (/ansh-small-loop, /ansh-loop) consume.
+description: PLANNER role in the Karpathy loop. Takes a goal (a Linear ticket ID/URL, OR a plain task description) and produces a machine-readable list of small, independently-executable subtasks — each stamped with a recommended model + effort tier, explicit done-criteria, and the feature edge cases / failure modes to watch out for and test (the smart-model edge-case thinking, captured here and propagated to subagents via the .md packets). The plan also carries explicit goal-level guardrails (boundaries never crossed), acceptance criteria (the product/user-facing done bar), and exit criteria (loop-level stop conditions) — required by /ansh-loop before it will execute a project-scale plan, and useful context even for /ansh-small-loop. Runs at high effort with extended thinking, then puts the finished plan through a cross-model codex challenge pass (via /ansh-codex challenge) — codex adversarially attacks the decomposition (missing subtasks, wrong ordering, weak done-criteria, missed edge cases) and the findings fold back in before hand-off, so the plan is bulletproof. Absorbs the context-gathering and Linear ticket handling from solve-linear-ticket, but does NOT depend on Linear — a plain prose goal works too. Use when the user says "/ansh-plan", "plan this out", "decompose this", or at the start of /ansh-small-loop or /ansh-loop. Outputs a plan file the SPECIALIST (/ansh-task) and ORCHESTRATORS (/ansh-small-loop, /ansh-loop) consume.
 allowed-tools:
   - Bash
   - Read
@@ -10,13 +10,13 @@ allowed-tools:
   - AskUserQuestion
   - Agent
   - Skill
-  - mcp__linear-server__get_issue
-  - mcp__linear-server__list_issues
-  - mcp__linear-server__list_comments
-  - mcp__linear-server__list_issue_statuses
-  - mcp__linear-server__get_team
-  - mcp__linear-server__save_comment
-  - mcp__linear-server__save_issue
+  - mcp__claude_ai_Linear__get_issue
+  - mcp__claude_ai_Linear__list_issues
+  - mcp__claude_ai_Linear__list_comments
+  - mcp__claude_ai_Linear__list_issue_statuses
+  - mcp__claude_ai_Linear__get_team
+  - mcp__claude_ai_Linear__save_comment
+  - mcp__claude_ai_Linear__save_issue
 ---
 
 # /ansh-plan — Planner
@@ -73,8 +73,8 @@ Detect the input shape:
 
 - **Linear ticket** (`REV-554`, a `linear.app/...` URL, or a `rev-554-*` branch): fetch it.
   ```
-  mcp__linear-server__get_issue with id=<TICKET_ID>
-  mcp__linear-server__list_comments with issueId=<id>   # if useful context exists
+  mcp__claude_ai_Linear__get_issue with id=<TICKET_ID>
+  mcp__claude_ai_Linear__list_comments with issueId=<id>   # if useful context exists
   ```
   Summarize in 2-3 sentences: what's broken/needed, constraints, edge cases the ticket names.
   If the ticket is `triage`/`backlog`/`unstarted`, transition it to **In Progress** (find the
@@ -114,17 +114,6 @@ Detect the input shape:
   via `list_issue_statuses`, then `save_issue`); the specialist (`/ansh-task`) confirms/sets its
   ticket to In Progress as it picks the subtask up; the GitHub integration owns `In Review`/`Done`
   — never set those by hand. On any Linear failure, surface it and continue — never block on a flip.
-
-### Recall vault context (`/obsidian`)
-
-Before or alongside the code read below, pull relevant context from the Obsidian vault via
-`/obsidian` — prior decisions, meeting notes, and Slack threads that already settled something
-about this ticket's topic(s), people, or repo area. This is context a codebase read and a Linear
-ticket alone won't surface (the *why* behind a constraint, an approach already ruled out in a
-sync). Query by the ticket's topic/person if one of the vault's canonical set applies, otherwise
-by the ticket ID or a free-text summary of the goal. Fold anything genuinely load-bearing into
-`plan.md`'s context/decisions section, with the note cited. Best-effort — if the vault is
-unavailable, note it in `plan.md` and continue; never block planning on it.
 
 Then read the code that matters — **deeply, not just enough to hand-wave.** Fan out `Explore`
 subagents to map the relevant subsystems, naming conventions, and prior art. You cannot write a
@@ -196,8 +185,8 @@ default, so this stamp only signals when to add a HEAVIER mode on top of that ba
 - `codex` — the default. Cross-model review is the baseline for every subtask.
 - `review-fresh` — touches auth / payments / migrations / destructive / data-loss → ALSO run
   parallel no-history Claude agents on top of the Codex pass.
-- `thermo-nuclear` — large structural change (new slice, consolidation merge, refactor >~10 files)
-  → ALSO run the maintainability swarm on top of the Codex pass.
+- `swarm` — large structural change (new slice, consolidation merge, refactor >~10 files)
+  → ALSO run the pr-review-* swarm on top of the Codex pass.
 
 ## Phase 3.5 — Make every subtask packet-ready (do not skip)
 
@@ -385,9 +374,8 @@ Before you hand the plan to the loop, get a **cross-model adversarial read of th
 Claude wrote this decomposition, so Claude is blind to its own blind spots. Codex is the orthogonal
 mind that tries to break it.
 
-Run the codex CLI directly in **challenge mode** — binary/auth check, the exact invocation, and
-the presentation format all live in `~/.claude/skills/ANSH-codex.md` (read it, don't guess the
-command). Point it at the plan you just wrote (`.ansh/plan.md` + `.ansh/plan.json` + the
+Invoke **`/ansh-codex challenge`**. It does the binary/auth check, the invocation and the
+presentation. It reads the plan you just wrote (`.ansh/plan.md` + `.ansh/plan.json` + the
 `.ansh/tasks/*.md` packets). Frame the challenge explicitly around the decomposition, not the code
 (there's no code yet):
 
@@ -413,7 +401,7 @@ Then **fold the findings back in** before handing off:
 - If Codex surfaces a genuine product/scope/direction question you can't resolve from the code, it's
   the user's call — `AskUserQuestion`, don't silently re-architect.
 
-If Codex is unavailable (the binary/auth check in `ANSH-codex.md` comes back `CODEX_UNAVAILABLE`),
+If Codex is unavailable (`/ansh-codex` ends with `CODEX_UNAVAILABLE`),
 do a rigorous in-session adversarial self-challenge instead and note in `plan.md` that the
 cross-model plan challenge was skipped. Don't skip the adversarial pass entirely — just record
 that it wasn't cross-model.

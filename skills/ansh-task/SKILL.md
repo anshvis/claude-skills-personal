@@ -9,9 +9,9 @@ allowed-tools:
   - Grep
   - Glob
   - Skill
-  - mcp__linear-server__get_issue
-  - mcp__linear-server__list_issue_statuses
-  - mcp__linear-server__save_issue
+  - mcp__claude_ai_Linear__get_issue
+  - mcp__claude_ai_Linear__list_issue_statuses
+  - mcp__claude_ai_Linear__save_issue
 ---
 
 # /ansh-task — Specialist

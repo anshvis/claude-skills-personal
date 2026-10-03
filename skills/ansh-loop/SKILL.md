@@ -12,10 +12,10 @@ allowed-tools:
   - Agent
   - Skill
   - Workflow
-  - mcp__linear-server__get_issue
-  - mcp__linear-server__list_comments
-  - mcp__linear-server__save_comment
-  - mcp__linear-server__save_issue
+  - mcp__claude_ai_Linear__get_issue
+  - mcp__claude_ai_Linear__list_comments
+  - mcp__claude_ai_Linear__save_comment
+  - mcp__claude_ai_Linear__save_issue
 ---
 
 # /ansh-loop — Orchestrator (project scale)
@@ -156,7 +156,7 @@ goal touches auth/payments/migrations/destructive surface, add `review-fresh` on
 ## Step 4 — SHIP (integration branch + small section PRs)
 
 Same topology as `/ansh-small-loop`'s Step 4 — integration branch, small section PRs merging into
-it in dependency order, umbrella PR to `dev` last, `/chill-describe` on every commit/PR, parent
+it in dependency order, umbrella PR to `main` last, `/chill-describe` on every commit/PR, parent
 ticket linked in magic-word position only. At project scale, sections map 1:1 to `plan.json.prs[]`
 entries and there will typically be more of them; open/merge them small-first exactly as before.
 

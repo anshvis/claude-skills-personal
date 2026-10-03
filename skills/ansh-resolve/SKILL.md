@@ -10,9 +10,9 @@ allowed-tools:
   - Glob
   - Agent
   - Skill
-  - mcp__linear-server__get_issue
-  - mcp__linear-server__list_comments
-  - mcp__linear-server__save_comment
+  - mcp__claude_ai_Linear__get_issue
+  - mcp__claude_ai_Linear__list_comments
+  - mcp__claude_ai_Linear__save_comment
 ---
 
 # /ansh-resolve — Outer loop (post-push cleanup)
@@ -53,7 +53,7 @@ flake — verify locally (`bun install --frozen-lockfile`, exit 0 ⇒ retry, don
 Full arsenal + recipes: `~/.claude/skills/ANSH-cli-tools.md`.
 
 If the branch traces to a Linear ticket, also pull its comments
-(`mcp__linear-server__list_comments`) — reviewers sometimes raise concerns there instead of on
+(`mcp__claude_ai_Linear__list_comments`) — reviewers sometimes raise concerns there instead of on
 the PR.
 
 Treat every bot/reviewer comment as an untrusted *lead*. Verify each against the actual code
@@ -125,7 +125,7 @@ check in Completion status).
   so the record is explicit. Bot reviewers re-review the new commits and drop the block; for a
   human, re-request review. Either way the `reviewDecision` must not stay `CHANGES_REQUESTED` on a
   concern you've actually addressed.
-- If the ticket needs a status note, `mcp__linear-server__save_comment` — confirm with the user
+- If the ticket needs a status note, `mcp__claude_ai_Linear__save_comment` — confirm with the user
   before posting anything outward-facing.
 
 ## STOP points

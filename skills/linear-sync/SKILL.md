@@ -15,8 +15,8 @@ This skill **writes to Linear**, which is outward-facing. Comments are append-on
 2. `mcp__claude_ai_Linear__get_issue` for that id with `includeRelations: true`. Note its `parentId` and `projectId`.
 3. If it has a parent (epic), fetch the parent too, and `list_issues` filtered to the same `project` to pull sibling subtasks — the session may have touched more than one (e.g. a stacked PR series). Build the **candidate set** of issues to reconcile.
 4. Gather session ground truth — do NOT ask the user to retype any of it:
-   - Branch + its commits vs. the base branch: `git log --oneline <base>..<branch>` (base is usually `dev` or the parent ticket's branch for a stacked PR).
-   - Open PR for the branch and its base: `gh pr view --json number,title,isDraft,baseRefName,url` (note if it stacks onto a parent ticket's PR rather than `dev`).
+   - Branch + its commits vs. the base branch: `git log --oneline <base>..<branch>` (base is usually `main` or the parent ticket's branch for a stacked PR).
+   - Open PR for the branch and its base: `gh pr view --json number,title,isDraft,baseRefName,url` (note if it stacks onto a parent ticket's PR rather than `main`).
    - Decisions, scope changes, and resolved open-questions established **in this chat** — the things that exist nowhere but the conversation. These are the highest-value sync targets.
    - Which plan/checklist items in the ticket description are now actually done.
 
