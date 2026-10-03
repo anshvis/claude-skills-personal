@@ -140,7 +140,7 @@ resume fails, start a fresh exec and say so.
 Default `high` for both modes (bounded input — a diff or a small set of plan files). Bump to
 `xhigh` only if the caller explicitly asked for it.
 
-## Presentation format (both modes)
+## Presentation format (all modes)
 
 ```
 CODEX SAYS (<review|challenge>):

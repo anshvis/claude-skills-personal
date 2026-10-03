@@ -9,9 +9,9 @@ allowed-tools:
   - AskUserQuestion
   - WebSearch
   - Skill
-  - mcp__linear-server__get_issue
-  - mcp__linear-server__list_issues
-  - mcp__linear-server__list_comments
+  - mcp__claude_ai_Linear__get_issue
+  - mcp__claude_ai_Linear__list_issues
+  - mcp__claude_ai_Linear__list_comments
 ---
 
 # /investigate-problem — Root-cause investigation for non-code problems
@@ -45,7 +45,7 @@ whichever of these are actually relevant to the question (skip what clearly does
   aggregates Slack/Linear/Granola meeting notes with topic/people wikilinks; a decision made in
   a meeting is often only findable here, not in Linear or Slack directly.
 - **Linear** — the ticket itself, its full comment history, and linked/related issues
-  (`mcp__linear-server__get_issue`, `list_comments`, `list_issues` for related tickets). Status
+  (`mcp__claude_ai_Linear__get_issue`, `list_comments`, `list_issues` for related tickets). Status
   changes and comment timestamps often show *when* something actually happened, not just that it
   did.
 - **Slack** (direct, if the vault's cached copy is stale or the channel isn't tracked there) —

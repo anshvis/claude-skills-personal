@@ -11,13 +11,13 @@ allowed-tools:
   - AskUserQuestion
   - Agent
   - Skill
-  - mcp__linear-server__get_issue
-  - mcp__linear-server__list_issues
-  - mcp__linear-server__list_comments
-  - mcp__linear-server__list_issue_statuses
-  - mcp__linear-server__get_team
-  - mcp__linear-server__save_comment
-  - mcp__linear-server__save_issue
+  - mcp__claude_ai_Linear__get_issue
+  - mcp__claude_ai_Linear__list_issues
+  - mcp__claude_ai_Linear__list_comments
+  - mcp__claude_ai_Linear__list_issue_statuses
+  - mcp__claude_ai_Linear__get_team
+  - mcp__claude_ai_Linear__save_comment
+  - mcp__claude_ai_Linear__save_issue
 ---
 
 # /solve-linear-ticket
@@ -46,11 +46,11 @@ The user invokes this skill with either a Linear URL or a ticket ID (e.g. `REV-5
 
 1. Fetch the ticket:
    ```
-   mcp__linear-server__get_issue with id=<TICKET_ID>
+   mcp__claude_ai_Linear__get_issue with id=<TICKET_ID>
    ```
    Also list recent comments if useful context exists:
    ```
-   mcp__linear-server__list_comments with issueId=<id>
+   mcp__claude_ai_Linear__list_comments with issueId=<id>
    ```
 2. Summarize the ticket in 2-3 sentences: what's broken/needed, who reported it (if known), any constraints in the description or comments.
 3. Build the branch name: `<tag-lower>-<slug>`.
@@ -73,9 +73,9 @@ The user invokes this skill with either a Linear URL or a ticket ID (e.g. `REV-5
    - If `statusType` is `completed` or `canceled` (e.g. `Done`, `Cancelled`, `In Review`), STOP and ask the user via AskUserQuestion whether to re-open the ticket and continue, or abort. Do not silently flip a Done ticket back to In Progress.
    - Otherwise (`statusType` ∈ `triage` | `backlog` | `unstarted`), transition:
      ```
-     mcp__linear-server__list_issue_statuses with teamId=<teamId from Phase 1.1 fetch>
+     mcp__claude_ai_Linear__list_issue_statuses with teamId=<teamId from Phase 1.1 fetch>
      # Find the status where statusType="started" (typically named "In Progress").
-     mcp__linear-server__save_issue with id=<TICKET_ID> and stateId=<that status id>
+     mcp__claude_ai_Linear__save_issue with id=<TICKET_ID> and stateId=<that status id>
      ```
    - On failure (permission denied, status not found, MCP error): show the error, ask the user to transition manually in Linear, and continue with the rest of the skill. Do not block on this — the work can proceed without the status flip.
 
@@ -162,7 +162,7 @@ Invoke `/ship`. Before letting `/ship` execute any `git commit` or `gh pr create
 
 If `/ship` insists on adding a default template / co-author trailer / emoji footer it cannot be talked out of, run the `git commit` / `gh pr create` manually with the `/chill-describe`-compliant message and skip the corresponding `/ship` step.
 
-After the PR is created, post the PR URL back to the conversation. Optionally, drop a comment on the Linear ticket linking the PR via `mcp__linear-server__save_comment` — confirm with the user first.
+After the PR is created, post the PR URL back to the conversation. Optionally, drop a comment on the Linear ticket linking the PR via `mcp__claude_ai_Linear__save_comment` — confirm with the user first.
 
 ## Phase 7.5 — Verify Linear transitioned to "In Review"
 
@@ -171,7 +171,7 @@ Linear's GitHub integration normally moves the ticket from `In Progress` → `In
 1. Wait briefly for the webhook (give it ~5-10 seconds after `gh pr create` returns).
 2. Re-fetch the ticket:
    ```
-   mcp__linear-server__get_issue with id=<TICKET_ID>
+   mcp__claude_ai_Linear__get_issue with id=<TICKET_ID>
    ```
 3. Read the `statusType`:
    - If `statusType` is `started` AND the status name indicates review (e.g. `In Review`): ✅ the integration fired. Log "Linear ticket transitioned to In Review."
@@ -179,7 +179,7 @@ Linear's GitHub integration normally moves the ticket from `In Progress` → `In
      ```
      mcp__claude_ai_Linear__list_issue_statuses with team=<teamId>
      # Find the status where statusType="started" AND name matches "In Review" (or your team's equivalent).
-     mcp__linear-server__save_issue with id=<TICKET_ID> and state=<that status id>
+     mcp__claude_ai_Linear__save_issue with id=<TICKET_ID> and state=<that status id>
      ```
      Then tell the user: "GitHub→Linear integration didn't auto-transition the ticket within 20s — flipped it manually. Worth checking the Linear ↔ GitHub integration status if this keeps happening."
    - If `statusType` is something else entirely (`unstarted`, `backlog`, `canceled`): surface the unexpected state and ask the user how to proceed. Do not silently flip.

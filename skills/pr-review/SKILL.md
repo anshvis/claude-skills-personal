@@ -19,8 +19,8 @@ including any in-progress edits — is never disturbed.
 
 The skill chains the two review skills already in this repo:
 
-- **`/review-fresh`** — parallel, context-free subagents diff `origin/dev..HEAD` and review across
-  three lenses (correctness, STYLE.md, tests). Requires a clean tree; rebases onto `origin/dev`.
+- **`/review-fresh`** — parallel, context-free subagents diff `origin/main..HEAD` and review across
+  three lenses (correctness, STYLE.md, tests). Requires a clean tree; rebases onto `origin/main`.
 - **`/review`** (gstack) — structural pre-landing review (SQL safety, trust boundaries, conditional
   side effects, etc.) of the current branch's diff vs base.
 
@@ -78,7 +78,7 @@ Invoke the **`/review-fresh`** skill now, before installing anything — its cap
 run on a dirty tree, and `bun install` can dirty the lockfile. Pass the PR title as the one-line
 intent argument (it's the author's *claim*, not ground truth — `/review-fresh` treats it that way).
 
-`/review-fresh` will fetch + rebase the worktree branch onto `origin/dev` and fan out three parallel
+`/review-fresh` will fetch + rebase the worktree branch onto `origin/main` and fan out three parallel
 reviewers. If its script exits non-zero (dirty tree, rebase conflict), surface the stderr verbatim
 and stop — do not try to repair the state yourself.
 
