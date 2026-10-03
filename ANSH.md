@@ -29,6 +29,7 @@ the absolute level slides with the goal.
 | **`/ansh-task`** | Specialist | **Sonnet low → Sonnet medium** (cheap execution) | Executes ONE scoped subtask, self-verifies against its done-criteria, stops. Minimal ceremony. Kicks back if low-conviction. |
 | **`/ansh-resolve`** | Outer loop | Sonnet/Opus, medium | Post-push: combs CI checks + bot/human review comments + Linear; triages; dispatches fixes; closes threads. |
 | **`/ansh-pr-loop`** | Recurring outer loop | Sonnet/Opus, medium | Runs `/ansh-resolve` on a ~5-min self-pacing cadence until CI is green and no review blocks — dismisses a stuck BOT review once its findings are verifiably fixed (never dismisses a human review), then asks before merging. Use to babysit a PR to mergeable instead of one manual `/ansh-resolve` pass. |
+| **`/ansh-codex`** | Outside voice (manual) | Codex CLI high; Claude cheap | On-demand cross-model pass — `review` (diff vs base, `[P1]` = FAIL), `challenge` (attack a plan/design/diff), or `consult` (ask codex anything, resumable). Same mechanism `/ansh-plan` + `/ansh-review` run automatically (`ANSH-codex.md`), no gstack. |
 | **`/ansh-save`** | Handoff / context-freeze | Sonnet, cheap | Stopping mid-stream: freezes the chat-only context (goal, done/not-done, repo state, decisions + why, landmines, next steps) into a resumable `.ansh/saves/<date>-<slug>.md`. A fresh session resumes cold from it. Not memory, not a plan. |
 
 ## The plan→task contract (self-contained packets + conviction gate)
@@ -104,7 +105,7 @@ live in `~/.config/ansh-cli/env.sh` (git-excluded, chmod 600); source it before 
 read-only, and name any missing token rather than working around it.
 
 **`ANSH-codex.md`** (sibling of this file) — the codex CLI invocation reference `/ansh-plan`
-(Phase 5, challenge mode) and `/ansh-review` (Phase 2, review mode) pull from directly: binary +
+(Phase 5, challenge mode), `/ansh-review` (Phase 2, review mode), and `/ansh-codex` (manual) pull from directly: binary +
 auth check, the exact `codex review` / `codex exec` invocations, output-gate parsing, and the
 unavailable-fallback rule. No gstack dependency — this is the whole mechanism, not a pointer to
 one.
