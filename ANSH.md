@@ -87,6 +87,7 @@ duplicate them under `/ansh-`:
 - **`gold-star`** — hold work to a named reference implementation. Surface divergence in review.
 - **`linear-sync`** — reconcile a ticket with reality after shipping.
 - **`lightweight-sql`** — minimize DB load on any SQL/Drizzle diff.
+- **`claude-fix-prompt`** — rewrite a prompt into a deeper (not bigger) version of the same task: what a top professional would do, the rawest material to start from, the named methods/tools, and an external check on the result. Run before handing a goal to `/ansh-plan` when the ask feels shallow.
 
 ## CLI arsenal (reference, not a skill)
 
