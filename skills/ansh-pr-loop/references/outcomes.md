@@ -23,7 +23,7 @@ needed) each time the loop merges a PR or ends a run:
 | `user_asked_merge` | Ansh told the loop to merge in his own message. |
 | `waiting_on_parent` | Converged, but a dependency is still open when the run ends. |
 | `parked` | `/ansh-review` said `PARKED: yes`: merging would be irreversible ([autonomy](../../_shared/autonomy.md)). Verified and left unmerged. |
-| `awaiting_approval` | Branch protection needs a non-author approval, a human change request awaits re-review, or it's an `/ansh-correct` PR. Review requested. |
+| `awaiting_approval` | Branch protection needs a non-author approval, a human change request awaits re-review. Review requested. |
 | `needs_review` | Someone else's PR. The loop reported findings and stopped. |
 | `safety_cap` | The iteration cap hit with work left. |
 | `stopped_by_user` | Ansh cancelled the run. |

@@ -1,15 +1,20 @@
 # Runtime
 
 Read once per session when using an `/ansh` skill. It maps the skills onto whatever host runs
-them (Claude Code, Codex, T3). [Autonomy](autonomy.md) still decides what needs me (nothing
+them (Claude Code, Cursor, Codex, T3). [Autonomy](autonomy.md) still decides what needs me (nothing
 during a run).
 
 ## Loading and paths
 
-- Claude Code invokes `/ansh-plan`; Codex uses `$ansh-plan`. A plain request naming the skill works.
+- Claude Code and Cursor invoke `/ansh-plan`; Codex uses `$ansh-plan`. A plain request naming the skill works.
 - Use the host's skill loader. Otherwise read the named `SKILL.md` from the installed skills root.
 - Resolve sibling skills, `_shared/` and `ANSH*.md` relative to that root (follow symlinks). Don't
   assume `~/.claude`.
+- Claude uses `~/.claude/skills`, Cursor `~/.cursor/skills`, and Codex `~/.agents/skills`.
+  `setup.sh` installs the same catalog and shared references for all three.
+- The `agents/` files are portable reviewer prompts. Claude also registers them as native agents;
+  other hosts can read them through `ANSH-agents/` in the skills root and pass the prompt to their
+  own delegation tool. Claude agent metadata does not require a Claude model or tool.
 - Read only the dependencies the current phase needs.
 
 ## Tools
@@ -49,8 +54,9 @@ during a run).
   already used Astra, a fresh-context Astra beats a weaker model picked for diversity.
 - Give the reviewer the intent, criteria, diff or plan path, standards and read-only scope. Not the
   author's reasoning. Forbid it from delegating or re-entering the loop.
-- On Claude, `/codex` works when Codex is installed and authenticated. A second Codex process on a
-  Codex host isn't cross-model.
+- On Claude or Cursor, the `codex` skill works when Codex is installed and authenticated. A second Codex process on a
+  Codex host isn't cross-model. Cursor can use its native subagents or an authenticated external
+  reviewer; discover capabilities rather than assuming Claude's Agent/Task API is available.
 - No delegation available: run a separate in-session adversarial pass and record
   `independence: in-session`. Never call it independent.
 - Record reviewer provider, model and independence (`cross-model`, `fresh-context`, `in-session`).

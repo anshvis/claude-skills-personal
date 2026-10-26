@@ -4,14 +4,15 @@ Personal, provider-neutral skill sources: my `/ansh-*` skills, which take a tick
 
 Public. Built for my own setup at work, so some skills assume that stack (web-app, Linear, Buildkite). Fork and adapt.
 
-## Install for Claude Code and Codex
+## Install for Claude Code, Cursor and Codex
 
 ```bash
 git clone https://github.com/anshvis/personal-skills.git ~/personal-skills
 ~/personal-skills/setup.sh
 ```
 
-Defaults to Claude and Codex. Claude keeps the complete existing skill catalog under
+Defaults to Claude, Cursor and Codex. Cursor gets the same complete catalog and shared
+references under `~/.cursor/skills/`. Claude keeps the complete existing skill catalog under
 `~/.claude/skills/` and its agent definitions under `~/.claude/agents/`. Codex and local ChatGPT coding sessions get the complete skill catalog, including every
 `ansh-*` skill and every helper/nested workflow, under `~/.agents/skills/`. Claude links directly to the sources. Codex links to a complete local mirror outside the
 Claude plugin directory so names stay plain, such as `$ansh-plan`. The mirror includes
@@ -22,11 +23,11 @@ Existing conflicting entries are backed up outside skill discovery under
 
 ```bash
 ./setup.sh --dry-run
-./setup.sh --providers claude,codex,cursor  # optional Cursor install
+./setup.sh --providers claude,cursor        # Claude and Cursor only
 ./setup.sh --providers codex              # only Codex
 ```
 
-Claude: `/ansh-plan <goal>`, `/ansh-task T1`, `/ansh-review`, `/ansh-save`.
+Claude and Cursor: `/ansh-plan <goal>`, `/ansh-task T1`, `/ansh-review`, `/ansh-save`.
 Codex: `$ansh-plan <goal>`, `$ansh-task T1`,
 `$ansh-review`, `$ansh-save`, or select the
 skill in the picker. Newly installed skills appear on the next turn; start a new session
@@ -44,9 +45,10 @@ installed by this setup.
 
 `setup.sh` also runs `beacon/setup.sh` (skip it with `--no-beacon`). It installs
 [Beacon](https://github.com/asymptote-labs/agent-beacon) from the release tarball (checksum
-verified) into `~/.local/bin`, starts its local collector with Claude and Codex hooks, and
-registers its MCP server as `aw-beacon` for both. Everything stays on the machine: it never signs
-in or connects to Beacon Cloud.
+verified) into `~/.local/bin`, configures its local collector hooks for the selected hosts, and
+registers its MCP server as `aw-beacon` in each selected host. Existing Cursor MCP servers
+are preserved, and the config is backed up before adding Beacon. The collector and memory store stay on the machine; setup never signs
+in or connects to Beacon Cloud. The optional nightly evaluator sends traces to Jev, as described below.
 
 The `/ansh` skills use it as project memory through `skills/_shared/ansh-memory`: planning,
 debugging and review read lessons from earlier runs, and verified root causes and reviewer
@@ -61,6 +63,11 @@ This sends session traces to Jev.
 security add-generic-password -U -a "$USER" -s ansh-jev-api-key -w   # prompts for the key
 ./setup.sh
 ```
+
+Cursor's [skill directories](https://cursor.com/docs/skills) and
+[MCP configuration](https://cursor.com/docs/mcp) use the standard skill folders and `mcpServers`
+JSON format. Restart Cursor after setup if its catalog has not refreshed. This installs local
+skills; remote and Cloud agents need their own installation or repository-provided skills.
 
 ## Install as a plugin (Claude Code Web)
 

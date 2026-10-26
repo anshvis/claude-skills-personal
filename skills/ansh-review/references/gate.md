@@ -29,8 +29,11 @@ The `--not` part drops commits that came in by merging `main` or the base.
 | `<sha>` isn't in the branch history | Treat as changed. Run the full gate. |
 | A commit the loop didn't make | Counts as a listed commit: full gate. |
 
-Reuse covers the other three lenses only. Whenever the head moved, the `/ansh-review` lens runs
-again at the new head, so `VERDICT`, `MERGE_LANE` and `PARKED` always describe the current code.
+Reuse across heads covers the `review-fresh` and Independent lenses only. Whenever the head
+moves, rerun both the `/ansh-review` and thermo-nuclear lenses at the new head, including after
+fix commits or base merges. `VERDICT`, `LOOP_CLOSURE`, `QUALITY`, `MERGE_LANE` and `PARKED` must
+describe the current head. At an unchanged head, reuse a recorded thermo-nuclear result only
+when its report identifies that SHA and meets the approval bar.
 
 ## Running the lenses
 
@@ -49,7 +52,9 @@ them, and posts.
 | `/thermo-nuclear-code-quality-review` | It sets `disable-model-invocation`, so the Skill tool can't load it. Brief a background subagent to read `../thermo-nuclear-code-quality-review/SKILL.md` and apply it to the diff. Return findings as presumptive-blocker, major or minor with `path:line`. |
 
 A lens the host can't run is marked `unavailable` in the header, never run by the gate's own agent.
-A missing fresh-context lens when the lane is deep is BLOCKED.
+A missing fresh-context lens when the lane is deep is BLOCKED. An unavailable thermo-nuclear
+lens blocks auto-merge in every lane. Populate `QUALITY` from its report; resolve or justify its
+findings with evidence under that skill's approval bar. An agent default alone is insufficient.
 
 ## One severity scale
 
@@ -78,6 +83,8 @@ lens's `<!-- ansh-review:merge-call -->` comment beside it ([output](output.md))
 Checked against: <FND-1234 (closes), parent FND-1200, TDD: <title + link> | no linked ticket>
 Verdict: <PASS | REVISE | DEBUG>. Kind: <setup | logic | wiring>. Blast radius: <low | medium | high>. Lane: <MERGE_LANE>. Parked: <no | yes>
 
+Loop closure: <closed, criteria and affected callers proved | open, missing proof and next checks>
+Code quality: thermo-nuclear <pass | revise | unavailable> (<report and SHA>)
 Worst severity: <blocker | major | minor | none>
 
 | Severity | Source | Finding | Where |
@@ -93,5 +100,7 @@ Worst severity: <blocker | major | minor | none>
 
 When the caller passes `/ansh-resolve`'s report for gate items: mark each fixed row
 `fixed in <sha>`, mark each agent default `agent default: <choice>`, and move `head=` to the pushed
-fix commit. Those fixes were verified against the gate's findings, so they don't trigger a full
-re-review. Any later non-merge commit does. Then run the `/ansh-review` lens at the new head.
+fix commit. Those fixes do not trigger a full four-lens re-review, but rerun the `/ansh-review`
+and thermo-nuclear lenses at the pushed head before publishing a passing gate. They must confirm
+the fixes and check for new behavioral or structural regressions. Any later non-merge commit
+triggers the full gate.

@@ -56,6 +56,9 @@ false confidence.
    - **Surface.** Re-derive the surface from the diff per
      [verification](../_shared/verification.md#surface). A half the packet didn't declare is Act on
      (`wrong-surface`), and the check set is widened before any PASS.
+   - **Loop closure.** Apply [closing the loop](../_shared/verification.md#closing-the-loop).
+     Record `LOOP_CLOSURE: closed` only with criterion-to-evidence links and affected-caller
+     coverage. Missing proof is Act on (`weak-verification`); strengthen it before PASS.
    - **Not a pass** per [verification](../_shared/verification.md#not-a-pass).
 4. **Does it work?** Read done-criteria from the packet (or what you were handed). Each gets a
    verdict with evidence. No evidence is a fail. Every "Watch out for" item must be handled and

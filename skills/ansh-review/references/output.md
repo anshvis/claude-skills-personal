@@ -11,6 +11,8 @@ VERDICT: PASS | REVISE | DEBUG
 SHA: <head sha reviewed>
 CRITERIA: <n met> / <n total>
 VERIFICATION: rerun <pass | fail> at <sha> | strength: <ok | weak: why it could pass while broken>
+LOOP_CLOSURE: closed - <criterion-to-evidence links and caller coverage> | open - <missing proof and next checks>
+QUALITY: thermo-nuclear <pass | revise | unavailable> - <report and reviewed SHA> | n/a (task, goal or gate lens)
 SURFACE: declared <class> | diff <class> | <match | mismatch: files>
 KIND: setup | logic | wiring [mixed: ...]
 PLAN_GAP: none | small | large - <one line per gap, with ticket key or TDD section>
@@ -34,10 +36,14 @@ GATE: <pr mode: worst severity, rows, reused from <sha> | fresh>
 ```
 
 - **PASS**: no Act on items, verification rerun passed at the head SHA, plan gap none or small
-  with its fix noted. The merge rule in autonomy.md decides the rest.
+  with its fix noted, and `LOOP_CLOSURE: closed`. In PR mode the thermo-nuclear lens must
+  meet its approval bar before the PR gate passes. The merge rule in autonomy.md decides the rest.
 - **REVISE**: Act on items go back to `/ansh-task`, or to `/ansh-plan` when the fix needs a
   decision or the plan gap is large. Never let the specialist guess through a plan gap.
 - **DEBUG**: BUGS go to `/ansh-debug` for a root cause before any fix.
+
+The gate orchestrator fills `QUALITY` from the thermo-nuclear lens before returning the PR
+verdict. The `ansh-review` gate lens does not claim another lens's result.
 
 ## PR comment
 
@@ -50,6 +56,8 @@ no AI attribution, no emoji.
 
 Kind: wiring (registers the forecast cron, adds the RPC route)
 Verification: rerun green at `<short sha>` (evidence: <path or link>)
+Loop closure: <closed: criteria and affected callers proved | open: missing proof and next checks>
+Code quality: thermo-nuclear <pass | revise | unavailable> (<report link and SHA>)
 Plan gap: small. FND-2710 names the input `censusInput`; the diff calls it `census`.
 Blast radius: high. The cron runs nightly for every unit, behind `forecast-v2` (off).
 Parked: <why, and the exact step Ansh would take> <omit when not parked>

@@ -4,7 +4,7 @@
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")" && pwd)"
-PROVIDERS=claude,codex
+PROVIDERS=claude,codex,cursor
 DRY_RUN=0
 BEACON=1
 usage() {
@@ -94,5 +94,5 @@ PYTHON
 done
 
 if [ "$BEACON" -eq 1 ]; then
-  if [ "$DRY_RUN" -eq 1 ]; then "$REPO/beacon/setup.sh" --dry-run; else "$REPO/beacon/setup.sh"; fi
+  if [ "$DRY_RUN" -eq 1 ]; then "$REPO/beacon/setup.sh" --providers "$PROVIDERS" --dry-run; else "$REPO/beacon/setup.sh" --providers "$PROVIDERS"; fi
 fi
