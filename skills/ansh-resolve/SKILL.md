@@ -12,7 +12,7 @@ evidence, or answered, with a visible trace on the PR.
 [`/chill-describe`](../chill-describe/SKILL.md), [autonomy](../_shared/autonomy.md),
 [verification](../_shared/verification.md), [principles](../_shared/principles.md),
 [stacking](../_shared/stacking.md), [ledger](../_shared/ledger.md) with `_shared/ansh-log`,
-[runtime](../_shared/runtime.md), [`ANSH-cli-tools.md`](../ANSH-cli-tools.md),
+[runtime](../_shared/runtime.md), [`_shared/cli-tools.md`](../_shared/cli-tools.md),
 [CI triage](references/ci-triage.md), [GitHub recipes](references/github.md).
 
 ## Steps

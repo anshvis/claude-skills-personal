@@ -41,7 +41,7 @@ Glue they call by name: `effort-dial` (size the work), `chill-describe` (every c
 `gold-star` (hold work to a reference), `lightweight-sql` (any SQL or Drizzle diff), `linear-sync`
 (reconcile tickets), `review-fresh` and `codex` (independent review), `claude-fix-prompt` (make a
 shallow ask deeper before planning). From agentic-workflow: `ui-evidence`, `verify-web`,
-`verify-ios`. CLI map for debugging and CI: [ANSH-cli-tools.md](ANSH-cli-tools.md).
+`verify-ios`. CLI map for debugging and CI: [cli-tools](skills/_shared/cli-tools.md).
 
 ## How a run goes
 

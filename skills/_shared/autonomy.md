@@ -50,8 +50,9 @@ non-author approval, request it from the CODEOWNERS and report `awaiting_approva
 Stop and report only when:
 - the goal's exit check passes (done), or
 - nothing left can move without a parked item, or
-- the same verification still fails after the iteration cap (3 rounds per task, 2 whole-goal
-  evaluations), with each attempt's evidence, or
+- the round budget runs out, with each attempt's evidence. A task gets 3 rounds (each REVISE,
+  DEBUG or NEEDS_REPLAN is one), then one `/ansh-plan` re-entry that buys 3 more, then BLOCKED.
+  The whole goal gets 2 evaluations. `plan.json` `termination` mirrors these numbers, or
 - a tool or credential is missing and nothing else can move (name the missing piece).
 
 A plateau isn't a stop. Change approach. Never relax a verification to declare success.

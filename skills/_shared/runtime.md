@@ -18,7 +18,7 @@ during a run).
 - Map Agent/Task/Workflow to whatever delegation exists. With none, run roles serially in-session.
 - Tool names like `mcp__claude_ai_Linear__get_issue` or `mcp__vitalize__buildkite_*` name a
   capability. Find the connected equivalent and read its real schema.
-- Prefer existing authenticated CLIs (`gh`, `bk`, `signoz`, see `ANSH-cli-tools.md`). Never print
+- Prefer existing authenticated CLIs (`gh`, `bk`, `signoz`, see `_shared/cli-tools.md`). Never print
   credentials or connect a new service to satisfy an example.
 - A missing ticket update is skipped with a note. Missing ticket content or CI logs that the work
   depends on: report BLOCKED with what's missing. Never fabricate it or mark an unchecked gate green.

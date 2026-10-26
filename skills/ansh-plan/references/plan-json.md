@@ -1,7 +1,7 @@
 # `.ansh/plan.json`
 
-The machine index the loops read. `/ansh-plan` writes it. Loops and `/ansh-task` update `status`
-and `merge_state` only.
+The machine index the loops read. `/ansh-plan` writes it. Loops and `/ansh-task` update `status`,
+`merge_state`, and `prs[].base` when a stack is retargeted (stacking). Nothing else.
 
 ```json
 {
@@ -28,7 +28,7 @@ and `merge_state` only.
   ],
   "agent_defaults": ["D-3", "D-4"],
   "termination": {
-    "max_iterations": 3,
+    "max_rounds_per_task": 3, "replans_per_task": 1,
     "max_goal_evaluations": 2,
     "quality_bar": "every verification contract passes at the head SHA and /ansh-review returns PASS"
   },

@@ -25,7 +25,7 @@ failure on the head counts.
 ## 3. Pull the failure
 
 **Buildkite.** Prefer the Buildkite MCP tools, always with `org_slug: "vitalize"`. Use `bk` only
-when it is on `PATH` (source `~/.config/ansh-cli/env.sh` first, see `ANSH-cli-tools.md`).
+when it is on `PATH` (source `~/.config/ansh-cli/env.sh` first, see `_shared/cli-tools.md`).
 `gh run view` can't read Buildkite logs.
 
 - Start with `buildkite_get_failed_job_logs` (pipeline slug, build number). It returns the failed

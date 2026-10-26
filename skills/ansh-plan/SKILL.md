@@ -67,7 +67,8 @@ sloppy plan makes every later round more expensive.
    - Group tasks into `prs[]`: the smallest set of tight PRs, one layer each. If the goal collapses
      to one PR, write in `plan.md` why the layers can't be cut. Several PRs use the integration
      topology in `/ansh-small-loop`. Record each PR's `base` per stacking.
-   - Every code task names its ticket. Untracked work is pure scaffolding only; note it in `plan.md`.
+   - When the goal has tickets, every code task names one. Untracked work is pure scaffolding only;
+     note it in `plan.md`. A prose goal has no tickets: branches are `ansh-<slug>` and `links` is empty.
    - Branches are `<tag-lower>-<slug>`: the tag of the PR's primary ticket (its `Closes` ticket,
      else its main `Part of`), lowercased, plus 3-6 specific kebab-case words from the title. Strip
      filler ("fix", "the", "issue with"). Lowercase ASCII and hyphens. Examples:
@@ -140,7 +141,7 @@ Loops also send you architectural REVISE findings and tasks that hit the iterati
 | case | do |
 |---|---|
 | Linear call fails | Note it and go on. Ticket content the plan needs is missing: BLOCKED (runtime). |
-| Needed work has no ticket | Create one under the parent so every task traces to a ticket. |
+| Needed work has no ticket (ticketed goal) | Create one under the parent so every task traces to a ticket. Prose goals skip this. |
 | No ACs anywhere | Infer them, mark `inferred`, list them first in the report. |
 | A Q-n or reviewer question is a product call | Agent default D-n with the alternative. Never ask. |
 | `effort-dial` or a called skill wants to ask me | Answer it yourself per autonomy and log it. |

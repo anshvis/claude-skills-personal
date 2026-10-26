@@ -9,7 +9,7 @@ description: "Take a bug to a confirmed root cause, then a fix and a regression 
 
 **Uses:** [runtime](../_shared/runtime.md), [autonomy](../_shared/autonomy.md),
 [verification](../_shared/verification.md), [principles](../_shared/principles.md),
-[ledger](../_shared/ledger.md) (`../_shared/ansh-log`), [CLI tools](../ANSH-cli-tools.md),
+[ledger](../_shared/ledger.md) (`../_shared/ansh-log`), [CLI tools](../_shared/cli-tools.md),
 [/ansh-task](../ansh-task/SKILL.md), [/ansh-plan](../ansh-plan/SKILL.md),
 [/ansh-verify](../ansh-verify/SKILL.md), [/codex](../codex/SKILL.md),
 [/lightweight-sql](../lightweight-sql/SKILL.md).
@@ -29,7 +29,7 @@ diagnosis note. Start on Sol, go to Astra per runtime.md.
    - PR signal: `gh pr view --json number,title,url,comments,reviews`,
      `gh api repos/{owner}/{repo}/pulls/<n>/comments`, `gh pr checks`.
    - Linear comments on the ticket (`list_comments`): reporters often name the trigger.
-   - CLI signal per ANSH-cli-tools.md. Source `~/.config/ansh-cli/env.sh` first. `signoz` for a
+   - CLI signal per _shared/cli-tools.md. Source `~/.config/ansh-cli/env.sh` first. `signoz` for a
      trace id or failing service (run `signoz agent instructions`, keep stderr). `bk` for a
      `buildkite/*` failure (`bk build view <n> -p <pipeline> --log`). `sentry-cli` for a prod
      crash. `kubectl`, `k9s`, `argocd`, `psql` for environment or data state, read-only

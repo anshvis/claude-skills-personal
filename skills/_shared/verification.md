@@ -69,8 +69,10 @@ query, or a job changes.
 
 ## Evidence pack
 
-Write to `~/.agentic-workflow/<repo-slug>/evidence/<branch>/<sha>/`: the command or journey, its
-output, screenshots, and a `verdict.json` (`{sha, checks:[{id, status, evidence}], surface}`).
+Write to `~/.agentic-workflow/<repo-slug>/evidence/<branch>/<sha>/<task-id>/`: the command or
+journey, its output, screenshots, and a `verdict.json` (`{sha, task, checks:[{id, status, evidence}],
+surface}`). `<sha>/manifest.json` lists every check expected from every packet the PR covers, with
+its status. The merge gate reads the manifest: a missing check is a fail.
 Tools that write their own pack (`verify-web`'s `pack.json`, `ui-evidence`'s `summary.json`) are
 copied into the same directory and referenced from `verdict.json`. Evidence survives cleanup.
 On my own PRs, post a short evidence comment (checks, verdicts, SHA) without asking. Don't upload

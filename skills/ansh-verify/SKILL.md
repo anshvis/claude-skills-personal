@@ -21,7 +21,7 @@ The contract shape, surface rules, evidence pack layout and what is not a pass l
 - Repo slug: `owner-repo` from `origin`, the same way the toolkit's `repo-slug.sh` derives it.
 - Feature map: `~/.agentic-workflow/<repo-slug>/feature-map/`. `README.md` is the index. One file per feature.
 - Stack recipes: `feature-map/_stack.md` (launch, doctor, cleanup).
-- Evidence: `~/.agentic-workflow/<repo-slug>/evidence/<branch>/<sha>/`.
+- Evidence: `~/.agentic-workflow/<repo-slug>/evidence/<branch>/<sha>/<task-id>/`, plus `<sha>/manifest.json`.
 
 The map stays local. Never commit it to the product repo. Propose committing it (as a PR, Ansh as
 reviewer) only when the ledger shows visible-class `escaped` events per merged visible milestone
@@ -47,7 +47,7 @@ dropping across two retros since the map was set up. `/ansh-retro` reports that 
 
 ### run `<task-id | plan | --checks file>`
 
-1. Load the contract: `.ansh/tasks/<id>.md` `## Verification`, every packet in `.ansh/plan.md`,
+1. Load the contract: `.ansh/tasks/<id>.md` `## Verification`, every packet listed in `plan.json` `subtasks[].packet`,
    or the given file. No contract: return BLOCKED. Don't invent one.
 2. Pin the SHA. Normal mode: head of the task branch. `--red-first`: the base SHA, in a separate
    worktree. Record it before any check runs.
@@ -61,7 +61,8 @@ dropping across two retros since the map was set up. `/ansh-retro` reports that 
    - **invisible:** the named tests, the DB check on a branch DB, perf (base and head, 3 runs
      each, limiter named), and the production signal firing locally.
 5. Write the pack: copy each tool's output (`summary.json`, `pack.json`, screenshots) into the
-   evidence dir, then `verdict.json` per [verification](../_shared/verification.md#evidence-pack).
+   evidence dir, then `verdict.json` per [verification](../_shared/verification.md#evidence-pack), and
+   update `<sha>/manifest.json` with every expected check from the PR's packets.
    A check passes only if it ran at the pinned SHA and its observable result matched.
 6. `--red-first`: every check must fail for the stated reason. A check that passes on base is
    `weak`: report it so the author rewrites it. A check that fails for another reason is `broken`.

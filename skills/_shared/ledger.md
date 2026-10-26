@@ -24,6 +24,8 @@ time, repo, branch, head SHA and cwd. A failed log write never fails the skill: 
 - `reason` (pick one): `weak-verification`, `missed-edge-case`, `plan-gap`, `wrong-surface`,
   `regression`, `perf`, `lint`, `types`, `ci-flake`, `ci-stale-base`, `review-comment`,
   `human-correction`, `tooling`, `scope`, `other`.
+- `merged` and `escaped` events carry `--goal`, `--milestone` and `--surface` so retro can split
+  escape rates by surface.
 - `class` (optional): a short kebab-case name for the specific mistake, e.g. `repo-in-facade` or
   `missing-tenant-filter`. Reuse an existing name when it's the same mistake. `/ansh-correct` groups
   on it, so a class seen twice gets fixed.
