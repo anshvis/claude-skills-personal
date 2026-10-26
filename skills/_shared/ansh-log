@@ -4,7 +4,7 @@
 set -uo pipefail
 
 if [ "$#" -lt 3 ]; then
-  echo "usage: ansh-log <skill> <phase> <verdict> [--goal G] [--task T] [--milestone M] [--attempt N] [--reason R] [--surface S] [--ids A,B] [--pr N] [--model M] [--note TEXT]" >&2
+  echo "usage: ansh-log <skill> <phase> <verdict> [--goal G] [--task T] [--milestone M] [--attempt N] [--reason R] [--class C] [--surface S] [--ids A,B] [--pr N] [--model M] [--note TEXT]" >&2
   exit 0
 fi
 command -v jq > /dev/null 2>&1 || { echo "ansh-log: jq missing, event not logged" >&2; exit 0; }
@@ -13,7 +13,7 @@ skill="$1"; phase="$2"; verdict="$3"; shift 3
 extra='{}'
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --goal|--task|--milestone|--reason|--surface|--model|--note|--ids)
+    --goal|--task|--milestone|--reason|--class|--surface|--model|--note|--ids)
       [ "$#" -ge 2 ] || { echo "ansh-log: $1 needs a value" >&2; exit 0; }
       key="${1#--}"
       if [ "$key" = ids ]; then

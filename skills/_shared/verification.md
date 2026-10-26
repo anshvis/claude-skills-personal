@@ -71,8 +71,10 @@ query, or a job changes.
 
 Write to `~/.agentic-workflow/<repo-slug>/evidence/<branch>/<sha>/`: the command or journey, its
 output, screenshots, and a `verdict.json` (`{sha, checks:[{id, status, evidence}], surface}`).
-Evidence survives cleanup. On my own PRs, post a short evidence comment (checks, verdicts, SHA)
-without asking. Don't upload to Linear.
+Tools that write their own pack (`verify-web`'s `pack.json`, `ui-evidence`'s `summary.json`) are
+copied into the same directory and referenced from `verdict.json`. Evidence survives cleanup.
+On my own PRs, post a short evidence comment (checks, verdicts, SHA) without asking. Don't upload
+to Linear.
 
 ## Not a pass
 
