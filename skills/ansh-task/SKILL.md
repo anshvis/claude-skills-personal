@@ -26,7 +26,7 @@ codebase. Model and effort come from the packet stamp, routed per runtime.md.
 3. **Ticket to In Progress.** Move the packet's own tickets per [tickets](../_shared/tickets.md).
 4. **Base.** Run stacking.md "Before starting work": fetch, take the base from
    `plan.json.prs[].base`, cut from `origin/<base>` or merge it in, confirm the dependency's code is
-   present. Merge, never rebase or force-push.
+   present.
 5. **Conviction gate.** Before touching code: are the files named, does the gold-star fit, is every
    criterion testable, is the Verification contract runnable, are there zero open questions? A
    question of fact (does this column exist, what does this call return) gets settled by running
