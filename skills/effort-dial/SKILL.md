@@ -43,8 +43,8 @@ Examples: implement a described feature, fix a bug with a clear repro, add tests
 ### 🔴 Deep — project thinking, ambiguity, or high blast radius
 Examples: architecture decisions, ambiguous "make this better", multi-file migrations, anything touching shared/DB/customer-facing surfaces, anything hard to reverse.
 
-- **Resolve ambiguity first.** If a decision is genuinely the user's (not inferable from code/defaults), use `AskUserQuestion` before building. Don't guess on high-stakes forks.
-- **Plan before acting.** Use plan mode (`EnterPlanMode`) for anything where the approach itself is in question, and present the plan for approval.
+- **Resolve ambiguity first.** Settle facts by running something. Inside an `/ansh` run, a genuine preference call gets an agent default per [autonomy](../_shared/autonomy.md). Outside one, ask before building.
+- **Plan before acting.** Inside an `/ansh` run the plan is `/ansh-plan`. Outside one, use plan mode (`EnterPlanMode`) when the approach itself is in question.
 - **Explore broadly.** Fan out `Explore`/`Plan` subagents to map subsystems and find prior art before committing to a design.
 - **Consider a Workflow** only if the user opted into multi-agent orchestration — otherwise propose it.
 - **Verify hard.** Run tests, exercise the real path, check the blast radius (who else calls this?), consider failure modes. State plainly what was and wasn't verified.

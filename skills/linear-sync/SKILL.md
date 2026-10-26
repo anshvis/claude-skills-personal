@@ -60,6 +60,7 @@ Then **confirm before any outward-facing write** using `AskUserQuestion`:
 - Comments (append-only): safe to apply on confirm.
 - **Status transitions and description/body edits: always confirm**, since they overwrite shared state. Show the exact before/after for body edits.
 - If the user pre-authorized ("just sync everything"), skip the per-item gate but still echo what you're about to do in one block before doing it.
+- Called from an `/ansh` run, treat it as pre-authorized for my own tickets ([autonomy](../_shared/autonomy.md)): apply comments, PR links and the In Progress transition, append decisions instead of rewriting bodies, and never set In Review or Done.
 
 Respect the user's saved preferences: no emojis, no AI-author trailers, no "as discussed" filler in anything written to Linear. Send real newlines in Linear strings, never literal `\n`.
 
