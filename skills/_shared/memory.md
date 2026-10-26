@@ -1,7 +1,7 @@
 # Project memory
 
 Lessons that should outlive a run go into Beacon's project memory: local to this machine, shared
-by Claude and Codex, one memory per repo (every worktree of a repo reads the same one). The
+by Claude, Cursor and Codex, one memory per repo (every worktree of a repo reads the same one). The
 [ledger](ledger.md) counts what happened. Memory says what to do differently next time.
 
 Use `<skills-root>/_shared/ansh-memory` (resolve `<skills-root>` like `ansh-log`). It exits 0 and

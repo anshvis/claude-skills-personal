@@ -5,7 +5,7 @@ feature success (the numbered ACs). The skills do the rest and prove it with CLI
 Everything under `/ansh-` is mine and current. The `SKILL.md` files are the source of truth; this
 file is the index.
 
-Runs on Claude Code (`/ansh-plan`) and Codex (`$ansh-plan`). See [runtime](skills/_shared/runtime.md).
+Runs on Claude Code and Cursor (`/ansh-plan`), and Codex (`$ansh-plan`). See [runtime](skills/_shared/runtime.md).
 
 ## Shared rules
 
