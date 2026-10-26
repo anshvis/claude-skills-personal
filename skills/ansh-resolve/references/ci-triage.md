@@ -1,6 +1,6 @@
 # CI triage
 
-Used by `/ansh-resolve` on every pass and by `/ansh-pr-loop` on every iteration. One copy.
+Owned by `/ansh-resolve`. `/ansh-pr-loop` and `/ansh-backend` read it. One copy.
 
 Every failing check gets its own investigation. Never treat "CI is red" as one item. Never guess
 the cause from the check name. Never push an empty commit to see if it passes.

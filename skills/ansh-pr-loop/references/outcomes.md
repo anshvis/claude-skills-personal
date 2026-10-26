@@ -12,7 +12,7 @@ needed) each time the loop merges a PR or ends a run:
 
 | Field | Meaning |
 |---|---|
-| `via` | `ansh-loop` or `ansh-small-loop` when that skill passed `via=<name>`, else `direct`. |
+| `via` | The conductor `/ansh-ship` passed as `via=<name>` (`ansh-loop` or `ansh-small-loop`), else `direct`. |
 | `merge_call` | `/ansh-review`'s `MERGE_LANE` (`standard` or `deep`), or `not-own` for someone else's PR. Stats count any other value in older lines as `standard`. |
 | `outcome` | One of the values below. |
 | `waiting_on` | `/ansh-review`'s `WAITING_ON` at the end of the run, else `[]`. |

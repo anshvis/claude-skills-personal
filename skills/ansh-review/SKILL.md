@@ -121,7 +121,6 @@ false confidence.
 | Reviewers still disagree after running something | Keep both sides in Consider. Set the lane to deep. |
 | No delegation available | In-session pass, `independence: in-session`, noted in `CONCERNS`. |
 | Deep lane or `review-fresh` needed, no fresh context | BLOCKED. |
-| Stacked or shared branch and a tool wants to rebase | Review from a detached worktree at the head. Never rebase or force-push. |
 | Dependency PR open or parked | `WAITING_ON`. Review anyway. |
 | Verification needs prod writes or a deploy | Don't. Mark the check skipped with the reason and set `parked: yes`. |
 | Someone else's PR | Read-only: no comments, no bookkeeping ([gate](references/gate.md)). |
