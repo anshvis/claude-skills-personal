@@ -75,4 +75,34 @@ if [ -d "$HOME/.codex" ]; then
   fi
 fi
 
+# 4. Nightly memory drafts with the Jev evaluator (beacon/evaluate.sh), only when a key exists.
+REPO="$(cd "$(dirname "$0")/.." && pwd)"
+if [ "$(uname -s)" = Darwin ]; then
+  label=com.ansh.beacon-evaluate
+  plist="$HOME/Library/LaunchAgents/$label.plist"
+  if ! security find-generic-password -s ansh-jev-api-key > /dev/null 2>&1 && [ -z "${TYPESAFE_API_KEY:-}" ]; then
+    say "no Jev key; nightly evaluation not scheduled. Add one with: security add-generic-password -U -a \"\$USER\" -s ansh-jev-api-key -w"
+  elif [ "$DRY_RUN" -eq 1 ]; then
+    say "would schedule $label daily at 03:00 -> $REPO/beacon/evaluate.sh"
+  else
+    mkdir -p "$HOME/Library/LaunchAgents" "$HOME/.local/state/ansh-skills"
+    cat > "$plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>$label</string>
+  <key>ProgramArguments</key><array><string>$REPO/beacon/evaluate.sh</string></array>
+  <key>StartCalendarInterval</key><dict><key>Hour</key><integer>3</integer><key>Minute</key><integer>0</integer></dict>
+  <key>EnvironmentVariables</key><dict><key>PATH</key><string>$BIN:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string></dict>
+  <key>StandardOutPath</key><string>$HOME/.local/state/ansh-skills/beacon-eval.log</string>
+  <key>StandardErrorPath</key><string>$HOME/.local/state/ansh-skills/beacon-eval.log</string>
+</dict></plist>
+PLIST
+    launchctl bootout "gui/$(id -u)/$label" > /dev/null 2>&1 || true
+    launchctl bootstrap "gui/$(id -u)" "$plist" && say "scheduled $label daily at 03:00"
+  fi
+else
+  say "nightly evaluation: add a cron line for $REPO/beacon/evaluate.sh"
+fi
+
 say "ready. Memory rules: skills/_shared/memory.md"
