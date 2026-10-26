@@ -37,20 +37,20 @@ codebase. Model and effort come from the packet stamp, routed per runtime.md.
    criterion testable, is the Verification contract runnable, are there zero open questions? A
    question of fact (does this column exist, what does this call return) gets settled by running
    something. A scope gap kicks back (step 11). Don't start on low conviction.
-6. **Red first.** Write each check in the packet's `## Verification` exactly as stated. Run it on
-   the base. Record that it failed and why: command, output, SHA. A check that already passes
-   proves nothing: rewrite it until it fails for the stated reason.
+6. **Red first.** Write each check in the packet's `## Verification` and run it on the base per
+   [verification](../_shared/verification.md) (`/ansh-verify run --red-first`). Record the failure:
+   command, output, SHA.
    Log `ansh-log ansh-task red-check DONE --task <id> --ids <AC/FM ids>`.
 7. **Implement.** Read the named files and gold-star references. Write the smallest diff that turns
    the checks green, mirroring the gold-star. Name the data shape first. No adjacent refactors,
    renames or "while I'm here".
 8. **SQL or Drizzle in the diff:** load `/lightweight-sql` and apply it.
-9. **Verify.** Run `/ansh-verify run` for the packet at the head SHA: every check, regression, perf
+9. **Commit, then verify.** Commit the candidate per `/chill-describe` so the SHA is real. Run
+   `/ansh-verify run` for the packet at that SHA: every check, regression, perf
    and the surface path in verification.md. Write the evidence pack. Every done-criterion gets
    met or not met with evidence (command + result). Log
    `ansh-log ansh-task done DONE --task <id> --attempt <n> --surface <surface>`.
-10. **Commit and push.** Prefer leaving the commit to the orchestrator. If you commit, draft it with
-    `/chill-describe`. Before any push or PR, run stacking.md "Before pushing or opening a PR": merge
+10. **Push.** Any change after verification is a new commit and a new verify. Before any push or PR, run stacking.md "Before pushing or opening a PR": merge
     `origin/<base>` again and re-verify, check `git log origin/<base>..HEAD` and the diff stat hold
     only this section, open with `--base <base>`.
 11. **Kick back** when scope is wrong (see Edge cases). Append to `.ansh/discoveries.md`: the task,

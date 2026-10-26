@@ -35,14 +35,13 @@ You conduct. Planning, code and review each run in their own skill.
 4. **Task and review, per task in dependency order.** Each round is a fresh subagent (autonomy).
    - `/ansh-task <id>`. NEEDS_REPLAN: `/ansh-plan` re-entry, then dispatch the reframed task again.
    - `/ansh-review <id>` on its result.
-     - PASS: commit it (see Rules) and take the next task.
+     - PASS: take the next task. The task already committed what review judged.
      - REVISE: send the blockers to `/ansh-task`, or to `/ansh-plan` when the finding is
        architectural.
      - DEBUG: `/ansh-debug` finds the root cause and writes fix tasks into the plan. They rejoin
        this step.
-   - Every NEEDS_REPLAN, REVISE and DEBUG counts as a round. The cap is in autonomy. At the cap,
-     send the task to `/ansh-plan` re-entry once to change approach. If the new approach also hits
-     the cap, stop with BLOCKED and each attempt's evidence.
+   - Rounds follow the budget in autonomy's stop conditions: 3, one replan, 3 more, then BLOCKED
+     with each attempt's evidence.
 5. **Whole-goal evaluation.** `/ansh-review` against `definition_of_done` and every AC, re-running
    verification at the head SHA, with a cross-model independent pass. Auth, payments, migrations,
    destructive work or a high blast radius add the deep lane (autonomy). Failures become new tasks
@@ -63,7 +62,7 @@ You conduct. Planning, code and review each run in their own skill.
   different ticket or epic gets its own worktree and a fresh session. A read-only lookup elsewhere
   is fine; edits and branch work are not.
 - **Small per-change commits.** One logical change each (a migration, a concept, a resolver, its
-  tests), so any one can be reverted. Commit as each task passes review. Never leave verified work
+  tests), so any one can be reverted. Each task commits before it verifies, so review judges a real SHA. Never leave verified work
   uncommitted: a worktree cleanup then becomes data loss.
 - **Topology.** A single-PR goal targets `main` and `Closes` its ticket. Otherwise the ticket's
   branch is a long-lived integration branch with one umbrella PR to `main`, opened once, titled
@@ -89,7 +88,7 @@ You conduct. Planning, code and review each run in their own skill.
 | case | do |
 |---|---|
 | Scope gate trips | Invoke `/ansh-loop` with the goal. Don't plan here. |
-| A task stamps Deep | Split it through `/ansh-plan` before dispatch. |
+| A task stamps Deep | Split it through `/ansh-plan` before dispatch. If the planner returned it as irreducible (DONE_WITH_CONCERNS), run it on Astra with the deep lane. |
 | `/ansh-task` returns BLOCKED on a missing dependency or base | Fix the base per stacking, then dispatch again. Never rebuild the dependency. |
 | BLOCKED on a missing tool or credential | Keep working everything else. Stop only when nothing can move, naming the missing piece. |
 | A sub-skill has a question gate | Answer it per autonomy and log the answer. |
