@@ -22,8 +22,8 @@ means it runs inside a Workflow script (see step 5).
 1. **Load.** Read the task's row in `.ansh/plan.json` and its packet. `status: done` already:
    return PASS with its SHA. Read `rounds` and `replans` so the budget survives a resume.
 2. **Size check.** A Deep stamp goes to `/ansh-plan` re-entry to split before dispatch. If the
-   planner returned it as irreducible (DONE_WITH_CONCERNS naming it), run it on Astra and treat
-   it as `deep`.
+   planner returned it as irreducible (DONE_WITH_CONCERNS naming it), run it on Sonnet/Opus/Sol with
+   high effort and treat it as `deep`; use advisor help per runtime when needed.
 3. **Do.** Dispatch `/ansh-task <id>` in a fresh subagent for every round, briefed per autonomy's
    [subagent rules](../_shared/autonomy.md#subagents), with the model and effort from the stamp
    (runtime).
