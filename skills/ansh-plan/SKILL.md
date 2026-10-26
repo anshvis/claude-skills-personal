@@ -90,8 +90,8 @@ sloppy plan makes every later round more expensive.
 
    A box that won't close means split it, research it, or take a default.
 
-6. **Persist to `.ansh/`.** Keep it out of git with the local exclude, never the tracked
-   `.gitignore`:
+6. **Persist to `.ansh/`.** Keep it, and any other agent scratch, out of git with the local
+   exclude, never the tracked `.gitignore`:
    ```bash
    grep -qxF '.ansh/' "$(git rev-parse --git-path info/exclude)" || printf '\n.ansh/\n' >> "$(git rev-parse --git-path info/exclude)"
    ```
@@ -138,7 +138,6 @@ Loops also send you architectural REVISE findings and tasks that hit the iterati
 | Needed work has no ticket (ticketed goal) | Create one under the parent so every task traces to a ticket. Prose goals skip this. |
 | No ACs anywhere | Infer them, mark `inferred`, list them first in the report. |
 | A Q-n or reviewer question is a product call | Agent default D-n with the alternative. Never ask. |
-| `effort-dial` or a called skill wants to ask me | Answer it yourself per autonomy and log it. |
 | Irreversible rollout or data-destroying merge | `parked_at_merge: true` on the milestone, PR and tasks. |
 | Perf-sensitive milestone without a budget | Default budget from verification, noted. |
 | A task won't split below Deep | Stamp Astra, return DONE_WITH_CONCERNS naming it. |

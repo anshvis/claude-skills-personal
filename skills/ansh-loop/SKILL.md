@@ -8,13 +8,15 @@ description: "Take a project (a Linear project or several parent tickets) to mer
 **Goal:** a whole project shipped as merged, verified PRs, with nothing waiting on me but parked
 items.
 
-**Uses:** `/ansh-plan`, `/ansh-task`, `/ansh-review`, `/ansh-debug`, `/ansh-pr-loop`,
-`/ansh-small-loop` (rules, topology, linking), `chill-describe`, `gold-star`, `lightweight-sql`,
-`linear-sync`, [autonomy](../_shared/autonomy.md), [verification](../_shared/verification.md),
-[stacking](../_shared/stacking.md), [runtime](../_shared/runtime.md),
-[ledger](../_shared/ledger.md), [principles](../_shared/principles.md).
+**Uses:** [`/ansh-plan`](../ansh-plan/SKILL.md), [`/ansh-cycle`](../ansh-cycle/SKILL.md),
+[`/ansh-debug`](../ansh-debug/SKILL.md), [`/ansh-review`](../ansh-review/SKILL.md) (`goal`),
+[`/ansh-ship`](../ansh-ship/SKILL.md), [`/ansh-pr-loop`](../ansh-pr-loop/SKILL.md),
+[`/ansh-small-loop`](../ansh-small-loop/SKILL.md) (scope gate), `linear-sync`,
+[autonomy](../_shared/autonomy.md), [worktrees](../_shared/worktrees.md),
+[tickets](../_shared/tickets.md), [stacking](../_shared/stacking.md),
+[runtime](../_shared/runtime.md), [ledger](../_shared/ledger.md).
 
-You conduct. Every rule in `/ansh-small-loop`'s "Rules for the whole run" applies here too.
+You conduct. Every piece of work runs in its own skill.
 
 ## Steps
 
@@ -29,12 +31,11 @@ You conduct. Every rule in `/ansh-small-loop`'s "Rules for the whole run" applie
 
    Don't write the criteria yourself. Don't run `effort-dial` on the goal: the plan stamped each task.
 3. **Run waves.** A wave is every task whose deps are done. Dispatch per runtime's orchestration
-   rules. Each task runs `/ansh-task <id>`, then `/ansh-review <id>`, as one pipeline.
+   rules. Each Workflow node runs `/ansh-cycle <id> node`.
    - Enumerate in plain tool calls before calling Workflow. Scripts have no filesystem access.
      Pass the task and PR lists through `args` as real JSON, never a stringified blob.
    - One `pipeline()` per section (`prs[]` entry). Deps become sequential stages; independent
-     tasks in a stage run in `parallel()`. Review of task N overlaps task N+1 where deps allow.
-     Sections run concurrently and block only on real deps, never on another section's review.
+     tasks in a stage run in `parallel()`. Sections run concurrently and block only on real deps.
    - Cap: ~15 agents per Workflow. Past that, one Workflow per wave in dependency order, and
      `log()` what's queued. Never truncate silently.
    - Isolation is for concurrency, not file sensitivity. Worktree-isolate a task only when it runs
@@ -42,33 +43,27 @@ You conduct. Every rule in `/ansh-small-loop`'s "Rules for the whole run" applie
      depends on it. Run any task with an in-run dependent unisolated, in the shared directory,
      sequenced with its dependent. An isolated agent gets a fresh checkout and can't see another
      agent's changes, so its dependent would find the code missing.
-   - A dependency across two Workflow calls reconciles through git, outside the script: commit
-     and push the upstream branch, then cut the dependent from it per stacking and confirm the
-     code is present. Never copy files across.
+   - A dependency across two Workflow calls reconciles through git, outside the script: run
+     `/ansh-ship <PR id> push-only` on the upstream section, then the dependent's `/ansh-task` cuts
+     from it per stacking. Never copy files across.
    - Hold back any task whose packet names an unlanded prerequisite (a blocking ticket, PR, or
      shared piece like a flag). Dispatch only what's unblocked. Report what you held back and why.
-   - A Workflow finishing proves nothing. A task is done only on its `/ansh-review` PASS.
-4. **Route verdicts** as in `/ansh-small-loop` step 4, with the same caps. Run NEEDS_REPLAN through
-   `/ansh-plan` here in the conversation, never from inside a Workflow. `/ansh-debug`'s fix tasks
-   join the next wave.
+   - A Workflow finishing proves nothing. A task is done only on its `/ansh-cycle` PASS.
+4. **Handed-up verdicts.** A node that returns HANDED_UP gets its `/ansh-plan` re-entry or
+   `/ansh-debug` run here in the conversation. The task and any fix packets join the next wave.
 5. **Between waves:**
    - Check every `exit_criteria` item. One trips: don't start the next wave. Park what it touches
      if parking resolves it, else stop and report.
    - Report each PR's merge state: merged, waiting on #<n>, parked, or `awaiting_approval`, with
      the reason.
-   - Check each linked ticket shows its PR and the parent picked up no section PRs.
    - Log the wave.
-6. **Whole-goal evaluation.** `/ansh-review` against `acceptance_criteria[]` as written, not a
-   paraphrase, re-running verification at the head SHA with a cross-model independent pass. Auth,
-   payments, migrations or destructive work add the deep lane (autonomy). Failures become tasks
-   through `/ansh-plan` and a new wave. Two evaluations at most.
-7. **Ship.** Same topology and linking as `/ansh-small-loop`: integration branch, one section PR
-   per `prs[]` entry into it, opened small-first, umbrella PR to `main`. Section PRs link their own
-   tickets from `prs[].links`. Only the umbrella links the parent.
-8. **Drive every PR to merge.** Right after each PR opens, run `/ansh-pr-loop <n> via=ansh-loop`.
-   Don't wait for the rest of the wave. It merges under the merge rule in autonomy. When a PR
-   merges, retarget and merge up the PRs stacked on it (stacking); their loops carry on. The
-   umbrella runs the same way and merges last, once every section is in.
+6. **Goal review.** Run `/ansh-review goal`. Failures go to `/ansh-plan` as new tasks and a new
+   wave. The review enforces its own evaluation cap.
+7. **Ship.** Run `/ansh-ship via=ansh-loop`. It opens every section PR small-first and the umbrella,
+   and starts `/ansh-pr-loop` on each as it opens. Each loop merges, parks or holds its PR and
+   merges up the stack when a dependency lands.
+8. **Wrap up.** Wait for every PR loop to end. Optionally run `linear-sync`. Log the final status
+   and report.
 
 ## Edge cases
 
@@ -78,16 +73,12 @@ You conduct. Every rule in `/ansh-small-loop`'s "Rules for the whole run" applie
 | More sections than the fan-out cap | Split into waves in dependency order. Log what's deferred. |
 | A task's packet names an unlanded prerequisite | Hold it back and report it. Dispatch the rest. |
 | A dependent would be worktree-isolated | Don't. Run the chain unisolated and sequenced. |
-| A dependency spans two Workflow calls | Reconcile through git per stacking. |
-| Dependent task finds the dependency's code missing | Base or reconcile problem. Fix the base; never rebuild the dependency. |
-| No Workflow API | Native delegation in dependency order, else serial. Say which ran. |
-| A dependency PR is open or parked | Build, verify and drive dependents stacked on it. Post the waiting-on comment. They merge once it does. |
-| A PR is `parked_at_merge` | Drive it to green; `/ansh-pr-loop` parks it per autonomy. Keep going. |
-| Branch protection needs a non-author approval | Requested by `/ansh-pr-loop`. Report `awaiting_approval`, keep going. |
+| Dependent task finds the dependency's code missing | Base or reconcile problem. Fix the base per stacking; never rebuild the dependency. |
+| No Workflow API | `/ansh-cycle` per task through native delegation in dependency order, else serially. Say which ran. |
 | An exit criterion trips | Stop new waves. Park or stop per step 5. |
+| A task returns BLOCKED (budget spent) | Keep working tasks that don't depend on it. |
 | BLOCKED on a missing tool or credential | Work everything else. Stop when nothing can move, naming it. |
-| A sub-skill has a question gate | Answer it per autonomy and log it. |
-| Same verification fails after the cap and a replan | That task is BLOCKED with its evidence. Keep working tasks that don't depend on it. |
+| `/ansh-review goal` fails its second evaluation | Stop with BLOCKED and each evaluation's evidence. |
 
 ## Output
 

@@ -59,7 +59,6 @@ means it runs inside a Workflow script (see step 5).
 | Task's packet names an unlanded prerequisite | Return BLOCKED naming it. The conductor holds it back. |
 | Same verification fails after the cap and a replan | BLOCKED with every round's evidence. |
 | Verification plateaus | Change approach through `/ansh-plan` re-entry. Never relax a check. |
-| A sub-skill has a question gate | Answer it per autonomy and log the answer. |
 | `/ansh-review` returns BLOCKED (no fresh context for the deep lane) | Return BLOCKED with what's needed. |
 | A model looks too weak after a failed round | Escalate per runtime and log it to `.ansh/decisions.md`. |
 | Task is `parked_at_merge` | Drive it to PASS like any other. Parking happens at merge. |

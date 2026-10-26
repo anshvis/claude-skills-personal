@@ -7,13 +7,15 @@ description: "Take one scoped ticket or task to a merged, verified PR with no hu
 
 **Goal:** one scoped ticket in, one merged and verified PR (or a small stack) out.
 
-**Uses:** `/ansh-plan`, `/ansh-task`, `/ansh-review`, `/ansh-debug`, `/ansh-pr-loop`, `/ansh-loop`,
-`effort-dial`, `chill-describe`, `gold-star`, `lightweight-sql`, `linear-sync`,
-[autonomy](../_shared/autonomy.md), [verification](../_shared/verification.md),
-[stacking](../_shared/stacking.md), [runtime](../_shared/runtime.md),
-[ledger](../_shared/ledger.md), [principles](../_shared/principles.md).
+**Uses:** [`/ansh-plan`](../ansh-plan/SKILL.md), [`/ansh-cycle`](../ansh-cycle/SKILL.md),
+[`/ansh-review`](../ansh-review/SKILL.md) (`goal`), [`/ansh-ship`](../ansh-ship/SKILL.md),
+[`/ansh-pr-loop`](../ansh-pr-loop/SKILL.md), [`/ansh-loop`](../ansh-loop/SKILL.md), `effort-dial`,
+`linear-sync`, [autonomy](../_shared/autonomy.md), [worktrees](../_shared/worktrees.md),
+[tickets](../_shared/tickets.md), [stacking](../_shared/stacking.md),
+[runtime](../_shared/runtime.md), [ledger](../_shared/ledger.md).
 
-You conduct. Planning, code and review each run in their own skill.
+You conduct. Every piece of work runs in its own skill. Do it all in the goal's worktree
+([worktrees](../_shared/worktrees.md)).
 
 ## Steps
 
@@ -28,57 +30,27 @@ You conduct. Planning, code and review each run in their own skill.
 
    Deep on the effort dial is difficulty, not scale. A gnarly bug or a tricky migration stays here.
 2. **Right-size.** Run `effort-dial` on the whole goal. State the tier in one line and log it.
-   - Quick: `/ansh-plan` writes one packet. One `/ansh-task`, one `/ansh-review`, then ship.
-   - Standard: the full loop below.
-   - Deep: the full loop, with `/ansh-review` biased to fresh-context and cross-model eyes.
+   - Quick: `/ansh-plan` writes one packet. One `/ansh-cycle`, then ship.
+   - Standard: every step below.
+   - Deep: every step below, with `deep` passed to each `/ansh-cycle`.
 3. **Plan.** Run `/ansh-plan`. Go on once the packets exist and the challenge has run.
-4. **Task and review, per task in dependency order.** Each round is a fresh subagent (autonomy).
-   - `/ansh-task <id>`. NEEDS_REPLAN: `/ansh-plan` re-entry, then dispatch the reframed task again.
-   - `/ansh-review <id>` on its result.
-     - PASS: take the next task. The task already committed what review judged.
-     - REVISE: send the blockers to `/ansh-task`, or to `/ansh-plan` when the finding is
-       architectural.
-     - DEBUG: `/ansh-debug` finds the root cause and writes fix tasks into the plan. They rejoin
-       this step.
-   - Rounds follow the budget in autonomy's stop conditions: 3, one replan, 3 more, then BLOCKED
-     with each attempt's evidence.
-5. **Whole-goal evaluation.** `/ansh-review` against `definition_of_done` and every AC, re-running
-   verification at the head SHA, with a cross-model independent pass. Auth, payments, migrations,
-   destructive work or a high blast radius add the deep lane (autonomy). Failures become new tasks
-   through `/ansh-plan` and go back to step 4. Two evaluations at most.
-6. **Ship.** Follow the topology and linking rules below and stacking for every base. Run
-   `chill-describe` before every commit, `gh pr create` and `gh pr edit --body`. If a PR template
-   gets injected, overwrite it with the chill-describe body. Then check each linked ticket shows the
-   PR and the parent doesn't (unless linked by rule). Fix gaps with `save_issue` links and say so.
-7. **Drive to merge.** Right after each PR opens, run `/ansh-pr-loop <n> via=ansh-small-loop`.
-   It merges under the merge rule in autonomy. When a dependency merges, retarget and merge up the
-   stack (stacking). The umbrella merges last, under the same rule.
-8. **Wrap up.** Optionally run `linear-sync`. Log the final status.
-
-## Rules for the whole run
-
-- **Worktrees and commits** follow [worktrees](../_shared/worktrees.md).
-- **Topology** follows [stacking](../_shared/stacking.md).
-- **Branches, PR links and ticket status** follow [tickets](../_shared/tickets.md).
-- **`.ansh/` stays local.** Use the local exclude from `/ansh-plan` step 6, never the tracked
-  `.gitignore`. Same for any agent scratch.
+4. **Cycle each task** in dependency order: `/ansh-cycle <id>`. A BLOCKED task holds only what
+   depends on it.
+5. **Goal review.** Run `/ansh-review goal`. Failures go to `/ansh-plan` as new tasks, then back to
+   step 4. The review enforces its own evaluation cap.
+6. **Ship.** Run `/ansh-ship via=ansh-small-loop`. It opens each PR and starts `/ansh-pr-loop` on
+   it, which drives it to merged, parked or awaiting approval.
+7. **Wrap up.** Wait for every PR loop to end. Optionally run `linear-sync`. Log the final status
+   and report.
 
 ## Edge cases
 
 | case | do |
 |---|---|
 | Scope gate trips | Invoke `/ansh-loop` with the goal. Don't plan here. |
-| A task stamps Deep | Split it through `/ansh-plan` before dispatch. If the planner returned it as irreducible (DONE_WITH_CONCERNS), run it on Astra with the deep lane. |
-| `/ansh-task` returns BLOCKED on a missing dependency or base | Fix the base per stacking, then dispatch again. Never rebuild the dependency. |
-| BLOCKED on a missing tool or credential | Keep working everything else. Stop only when nothing can move, naming the missing piece. |
-| A sub-skill has a question gate | Answer it per autonomy and log the answer. |
-| Diff touches SQL or Drizzle | The specialist applies `lightweight-sql`. |
-| A `gold-star` reference is named | Packets point at it; review reports divergence. |
-| Task or PR is `parked_at_merge` | Drive it to green; `/ansh-pr-loop` parks it per autonomy. Keep going on everything that doesn't depend on it. |
-| A dependency is open or parked | Build and verify dependents stacked on it. They merge only after it does. |
-| Branch protection needs a non-author approval | `/ansh-pr-loop` requests it. Report `awaiting_approval`. |
-| A tool wants to rebase or force-push a shared branch | Don't. Follow stacking's merge-only rule. |
-| Verification plateaus | Change approach. Never relax a check to pass. |
+| A task comes back BLOCKED on a missing tool or credential | Keep working everything else. Stop only when nothing can move, naming the missing piece. |
+| `/ansh-review goal` fails its second evaluation | Stop with BLOCKED and each evaluation's evidence (autonomy's stop conditions). |
+| `/ansh-ship` skips a PR as not ready | Cycle its remaining tasks, then ship again. |
 
 ## Output
 
