@@ -1,9 +1,9 @@
 {
   "name": "ansh-personal",
-  "description": "Ansh's personal Karpathy-loop skills: /ansh-loop (orchestrator) + plan/task/review/codex/debug/resolve/save, plus glue (effort-dial, chill-describe, gold-star, linear-sync, lightweight-sql, review-fresh) and web-handoff/web-read.",
+  "description": "Ansh's /ansh skills: take a ticket or TDD to a merged, verified PR without a human in the loop, plus the glue skills they call.",
   "version": "1.0.0",
   "author": {
     "name": "Ansh Viswanathan",
-    "email": "anshvis@users.noreply.github.com"
+    "url": "https://github.com/anshvis"
   }
 }

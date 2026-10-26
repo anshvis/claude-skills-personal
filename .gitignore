@@ -1,0 +1,21 @@
+# Local session and agent state. Never commit it.
+.ansh/
+.claude/
+.codex/
+.cursor/
+.agentic-workflow/
+logs/
+state/
+*.log
+*.jsonl
+
+# Local config and secrets
+.env
+.env.*
+*.local.*
+*.local
+config.env
+
+# OS and editor
+.DS_Store
+*.swp

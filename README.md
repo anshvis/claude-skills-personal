@@ -2,7 +2,7 @@
 
 Personal, provider-neutral skill sources: my `/ansh-*` skills, which take a ticket or TDD to a merged, verified PR without a human in the loop, the glue skills they call, and a few standalone helpers. `ANSH.md` is the index.
 
-Private repo → visible only to me and my agents.
+Public. Built for my own setup at work, so some skills assume that stack (web-app, Linear, Buildkite). Fork and adapt.
 
 ## Install for Claude Code and Codex
 
