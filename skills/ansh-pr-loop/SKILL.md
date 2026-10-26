@@ -7,7 +7,7 @@ description: "Drive one PR to merged: run the /ansh-review pr gate, hand its fin
 
 **Goal:** an open PR becomes merged, parked or awaiting approval, with evidence on its head SHA.
 
-**Uses:** [`/ansh-review`](../ansh-review/SKILL.md) (`pr` mode), [`/ansh-resolve`](../ansh-resolve/SKILL.md),
+**Uses:** [memory](../_shared/memory.md), [`/ansh-review`](../ansh-review/SKILL.md) (`pr` mode), [`/ansh-resolve`](../ansh-resolve/SKILL.md),
 [`/ansh-verify`](../ansh-verify/SKILL.md), [`/ansh-plan`](../ansh-plan/SKILL.md),
 [autonomy](../_shared/autonomy.md), [verification](../_shared/verification.md),
 [stacking](../_shared/stacking.md), [worktrees](../_shared/worktrees.md),
@@ -81,7 +81,9 @@ when the head hasn't moved.
      `--squash --auto --match-head-commit <sha>` so a later head can't merge unverified.
      If branch protection needs a non-author approval, request CODEOWNERS, post the
      awaiting-approval comment, arm `--auto` and keep watching. Outcome `awaiting_approval`.
-9. **Log and stop.** After a merge, set `merge_state: merged` in `plan.json` and log
+9. **Log and stop.** After a merge, approve the memory drafts for the PR's tasks
+   (`ansh-memory approve-merged <task-ids>`), and save each agent default that merged uncorrected
+   as a `convention` draft, per [memory](../_shared/memory.md). Set `merge_state: merged` in `plan.json` and log
    `ansh-log ansh-pr-loop merge merged --pr <n> --goal <g> --milestone <M-n> --surface <s>`. Write
    one outcome line ([outcomes](references/outcomes.md)). Unwatch the PR and stop the cadence.
 

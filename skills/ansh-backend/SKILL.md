@@ -68,7 +68,8 @@ performs the user action and this skill asserts that action's side effects at th
    the output and the verdict. Clean up what you started. Log
    `ansh-log ansh-backend check <PASS|FAIL|BLOCKED> --surface backend --task <id> --ids <AC-n>`.
    A config, seed or environment trap you had to work around goes to project memory as a `gotcha`
-   candidate per [memory](../_shared/memory.md).
+   draft, and the first working way to reach an API, run a job or seed data as an approved
+   `workflow`, per [memory](../_shared/memory.md).
 
 ## Edge cases
 

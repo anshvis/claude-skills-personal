@@ -63,7 +63,8 @@ shallow ask deeper before planning). From agentic-workflow: `ui-evidence`, `veri
   -> /ansh-ship
        -> per PR: /ansh-pr-loop <n>
             -> /ansh-review pr <n> -> /ansh-resolve <n> -> /ansh-verify run -> merge | park
-memory: plan, debug and review read it; debug, resolve, cycle, verify and backend save to it
+memory: plan, debug and review read it; skills save what went wrong and what was new and worked;
+        drafts tied to a task are approved when its PR merges
 weekly: /ansh-retro (skills, memory queue) and /ansh-correct (repo checks)
 ```
 

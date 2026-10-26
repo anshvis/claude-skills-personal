@@ -75,8 +75,9 @@ dropping across two retros since the map was set up. `/ansh-retro` reports that 
 8. Cleanup what you started. Confirm the evidence dir survived.
 9. Log one event per check: `ansh-log ansh-verify run <PASS|REVISE> --task T --surface S --ids AC-n`.
 10. Update the feature's `Last verified` SHA. Map drift found while driving: fix the map file now.
-    A stack, seed, port or secrets-config trap that isn't feature-specific goes to project memory
-    as a `gotcha` candidate per [memory](../_shared/memory.md).
+    Beyond one feature: a stack, seed, port or secrets-config trap goes to project memory as a
+    `gotcha` draft, and the first working recipe for a kind of check as an approved `workflow`, per
+    [memory](../_shared/memory.md).
 
 ### maintain
 

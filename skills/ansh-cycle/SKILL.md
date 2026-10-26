@@ -35,7 +35,9 @@ means it runs inside a Workflow script (see step 5).
 4. **Judge.** Run `/ansh-review task <id>` at the task's head SHA. On `deep`, ask it for the deep
    lane: fresh-context and cross-model eyes.
 5. **Route the verdict.**
-   - PASS: set `status: done`. Log and return PASS with the SHA.
+   - PASS: set `status: done`. Log and return PASS with the SHA. An approach that worked and wasn't
+     in memory or the packet's gold-star becomes a `workflow` draft with `--task` per
+     [memory](../_shared/memory.md).
    - REVISE with `ACT_ON` routed to `ansh-task`: a round. Back to step 3 with the findings.
    - REVISE routed to `ansh-plan` (architectural, or `PLAN_GAP: large`): a round. `/ansh-plan`
      re-entry, then step 3.

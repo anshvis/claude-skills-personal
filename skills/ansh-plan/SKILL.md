@@ -30,7 +30,8 @@ sloppy plan makes every later round more expensive.
      prior art. For each area the work touches, find the existing code to mirror: the gold-star.
      You can't write a packet for code you haven't read.
    - Read project memory per [memory](../_shared/memory.md) with the goal text, then each area
-     it touches. Step 5 folds what applies into the packets.
+     it touches. Step 5 folds what applies into the packets. An area memory knew nothing about
+     and you had to explore: save what you learned as a `workflow` draft with `--task` per memory.
 
 2. **Phase 0: milestones and TDD checks.**
    - With a TDD: number AC, FM, D, Q and M IDs per [milestones](../_shared/milestones.md). Find the

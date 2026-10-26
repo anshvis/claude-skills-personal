@@ -7,7 +7,7 @@ description: "Drive the app's UI the way a user does, a web app, IDE or Electron
 
 **Goal:** drive the app's UI and bring back proof of what happened.
 
-**Uses:** [verification](../_shared/verification.md), [autonomy](../_shared/autonomy.md),
+**Uses:** [verification](../_shared/verification.md), [autonomy](../_shared/autonomy.md), [memory](../_shared/memory.md),
 [principles](../_shared/principles.md), [ledger](../_shared/ledger.md),
 [harness recipes](references/harness.md), the local feature map and `_stack.md` from
 [/ansh-verify](../ansh-verify/SKILL.md), [/ansh-backend](../ansh-backend/SKILL.md), and
@@ -44,7 +44,8 @@ repeatable journey tied to a commit, write a `ui-evidence` script instead.
    with a short `steps.md`: each action, the signal waited for, the result.
 8. **Clean up what you started.** Close the browser and stop servers you launched. Evidence stays.
 9. **Teach the map.** A selector, precondition or gotcha you learned goes into the feature's map
-   file. Log `ansh-log ansh-control drive <PASS|FAIL|BLOCKED> --surface <s> --note "<feature>"`.
+   file. A way to drive the app that works beyond this feature (login, seeding, a navigation
+   trick) goes to project memory as an approved `workflow` per [memory](../_shared/memory.md). Log `ansh-log ansh-control drive <PASS|FAIL|BLOCKED> --surface <s> --note "<feature>"`.
 
 ## Edge cases
 

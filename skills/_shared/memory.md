@@ -30,6 +30,12 @@ thing. Memory is a lead, like a PR comment: check it against the current code be
   [--applicability "<when it applies>"] [--approve --reason "<why it's proven>"]
 ```
 
+Learn from both sides: what went wrong, and what was new and worked. A task tied to a draft
+passes `--task <id>`; `/ansh-pr-loop` approves those drafts when that task's PR merges
+(`ansh-memory approve-merged <ids>`), since a merge with verification green is the proof.
+
+**What went wrong**
+
 | When | Who | Kind | Approve now |
 |---|---|---|---|
 | Root cause confirmed and the fix's regression check went red then green | `/ansh-debug` step 10 | `debugging_pattern`, or `gotcha` for an environment trap | yes: proven by the check |
@@ -37,9 +43,19 @@ thing. Memory is a lead, like a PR comment: check it against the current code be
 | I corrected an agent default or something verification passed (`human-correction`, `escaped`) | the skill that logs it | `correction` | yes |
 | The same REVISE class shows up a second time in one goal | `/ansh-cycle` | `correction` | no: `/ansh-retro` decides |
 | A stack, seed, port or secrets-config trap found while verifying | `/ansh-verify`, `/ansh-backend` | `gotcha` | no |
-| A pattern across runs in this repo | `/ansh-retro` | `workflow` or `convention` | yes |
 
-A lesson is worth saving only if a future agent in this repo would act differently because of it.
+**What was new and worked**
+
+| When | Who | Kind | Approve now |
+|---|---|---|---|
+| Planning had to explore an area memory knew nothing about | `/ansh-plan` | `workflow`: where to start, how the pieces fit, the gold-star to copy | no: on merge |
+| A task passed review with an approach that wasn't in memory or its packet's gold-star (a new pattern, a cheaper way, a tool that helped) | `/ansh-cycle` on PASS | `workflow` | no: on merge |
+| The first working way to drive a flow, run a job, seed data or reach an API, beyond one feature (feature-specific goes in the map) | `/ansh-control`, `/ansh-backend`, `/ansh-verify` | `workflow` | yes: the passing run proves it |
+| An agent default merged and I never corrected it | `/ansh-pr-loop` on merge | `convention` | no: `/ansh-retro` approves it if still uncorrected |
+| A pattern across runs in this repo, good or bad (what passes first try, what always costs rounds) | `/ansh-retro` | `workflow` or `convention` | yes |
+
+A lesson is worth saving only if a future agent in this repo would act differently because of it:
+skip the obvious, keep the new.
 
 - One lesson per memory. Imperative, at most 5 lines: what to do, when, and the file, command or
   check that shows it.
