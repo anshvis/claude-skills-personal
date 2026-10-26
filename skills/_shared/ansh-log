@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# Append one /ansh ledger event. Never fails the caller: problems go to stderr, exit 0.
+# usage: ansh-log <skill> <phase> <verdict> [--key value ...]
+set -uo pipefail
+
+if [ "$#" -lt 3 ]; then
+  echo "usage: ansh-log <skill> <phase> <verdict> [--goal G] [--task T] [--milestone M] [--attempt N] [--reason R] [--surface S] [--ids A,B] [--pr N] [--model M] [--note TEXT]" >&2
+  exit 0
+fi
+command -v jq > /dev/null 2>&1 || { echo "ansh-log: jq missing, event not logged" >&2; exit 0; }
+
+skill="$1"; phase="$2"; verdict="$3"; shift 3
+extra='{}'
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --goal|--task|--milestone|--reason|--surface|--model|--note|--ids)
+      [ "$#" -ge 2 ] || { echo "ansh-log: $1 needs a value" >&2; exit 0; }
+      key="${1#--}"
+      if [ "$key" = ids ]; then
+        extra="$(jq -c --arg v "$2" '. + {ids: ($v | split(",") | map(select(. != "")))}' <<< "$extra")"
+      else
+        extra="$(jq -c --arg k "$key" --arg v "$2" '. + {($k): $v}' <<< "$extra")"
+      fi
+      shift 2 ;;
+    --attempt|--pr)
+      [ "$#" -ge 2 ] && [[ "$2" =~ ^[0-9]+$ ]] || { echo "ansh-log: $1 needs a number" >&2; exit 0; }
+      extra="$(jq -c --arg k "${1#--}" --argjson v "$2" '. + {($k): $v}' <<< "$extra")"
+      shift 2 ;;
+    *) echo "ansh-log: unknown flag $1" >&2; exit 0 ;;
+  esac
+done
+
+repo=""; branch=""; sha=""
+if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+  repo="$(git remote get-url origin 2>/dev/null | sed -E 's#(git@|https://)([^/:]+)[/:]##; s#\.git$##')"
+  branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
+  sha="$(git rev-parse HEAD 2>/dev/null)"
+fi
+
+ledger="${ANSH_LEDGER:-$HOME/.agentic-workflow/ansh/events.jsonl}"
+mkdir -p "$(dirname "$ledger")" 2>/dev/null || { echo "ansh-log: cannot create $(dirname "$ledger")" >&2; exit 0; }
+
+line="$(jq -cn \
+  --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --arg skill "$skill" --arg phase "$phase" --arg verdict "$verdict" \
+  --arg repo "$repo" --arg branch "$branch" --arg sha "$sha" --arg cwd "$PWD" \
+  --arg session "${CLAUDE_SESSION_ID:-${CODEX_SESSION_ID:-}}" \
+  --argjson extra "$extra" \
+  '{ts:$ts, skill:$skill, phase:$phase, verdict:$verdict, repo:$repo, branch:$branch, sha:$sha, cwd:$cwd, session:$session} + $extra')" \
+  || { echo "ansh-log: could not build event" >&2; exit 0; }
+
+printf '%s\n' "$line" >> "$ledger" 2>/dev/null || echo "ansh-log: cannot write $ledger" >&2
+exit 0
