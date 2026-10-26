@@ -1,6 +1,6 @@
-# ANSH CLI tools — debugging & resolution arsenal
+# CLI tools for debugging and CI
 
-Shared reference for `/ansh-debug` and `/ansh-resolve`. These CLIs turn "ask the user to
+Shared reference for `/ansh-backend`, `/ansh-debug` and `/ansh-resolve`. These CLIs turn "ask the user to
 paste a log / retry from the UI" into first-party investigation. **Prefer them over asking the
 human** when you need CI logs, prod traces, runtime errors, or live cluster/DB state.
 
@@ -20,7 +20,7 @@ token", the fix is **tell the user which token is missing**, not to work around 
 Verify auth quickly: `signoz config doctor` · `bk user --help` (or `bk build list -p <pipe>`) ·
 `sentry-cli info`.
 
-## The point-of-use map — symptom → tool
+## Symptom to tool
 
 | You have… | Reach for | First command |
 |-----------|-----------|---------------|
@@ -33,9 +33,9 @@ Verify auth quickly: `signoz config doctor` · `bk user --help` (or `bk build li
 | A workflow stuck | **temporal** | `temporal workflow list` |
 | SQL to lint | **sqlfluff** | `sqlfluff lint <file>` |
 
-## SigNoz (`signoz`) — traces, logs, metrics (read-only)
+## SigNoz (`signoz`): traces, logs, metrics (read-only)
 
-The CLI ships its own agent guide — **read it live** for exact filter/time syntax rather than
+The CLI ships its own agent guide. **Read it live** for exact filter/time syntax rather than
 guessing: `signoz agent instructions` (also cached at
 `~/.config/ansh-cli/signoz-agent-instructions.md`). Get the lay of the land first:
 `signoz agent context`.
@@ -49,16 +49,16 @@ signoz logs search  --trace-id <trace-id>                                 # logs
 signoz logs context --at <iso-or-unix-ms> --around 20 --service <svc>     # logs around a timestamp
 ```
 
-- Output is JSON on stdout; **warnings + "0 rows" notes go to stderr — don't discard stderr**,
+- Output is JSON on stdout; **warnings + "0 rows" notes go to stderr. Don't discard stderr**,
   it explains empty results. `--output table|tsv|ndjson|values` for other shapes.
 - `--filter` uses dot keys (`resource.service.name`, `response_status_code >= 500`), joinable
   with `AND`; `--group-by` uses colon form (`resource:service.name`).
 - CI spans (like the db-tests failure) live under `service.name = "buildkite-ci"` with
-  `buildkite.pipeline` / `buildkite.step_key` attributes — but for CI, **`bk` is more direct**.
+  `buildkite.pipeline` / `buildkite.step_key` attributes, but for CI **`bk` is more direct**.
 
-## Buildkite (`bk` — v3) — the real CI truth `gh` can't show
+## Buildkite (`bk` v3): the CI truth `gh` can't show
 
-`buildkite/*` checks are Buildkite, not GitHub Actions — `gh run view` can't read them. `bk` can
+`buildkite/*` checks are Buildkite, not GitHub Actions. `gh run view` can't read them. `bk` can
 pull the actual failing step log and **retry a flaky step without pushing an empty commit**.
 
 ```bash
@@ -70,11 +70,10 @@ bk build retry <number> -p <pipeline>                  # re-run a flaky/infra-fa
 
 Pipelines seen on this repo: `database-pr-db-tests`, `white-check-mark-pr-checks`,
 `robot-face-pr-review`, `bell-knock-consistency-check`, `eyes-pr-preview`,
-`terraform-infra-preview`. A `bun install --frozen-lockfile` exit-1 is usually the Playwright
-postinstall/CDN flake, **not** a lockfile drift — confirm locally with
-`bun install --frozen-lockfile` (exit 0 = retry the step, don't touch the lockfile).
+`terraform-infra-preview`. Known flakes, including the `bun install --frozen-lockfile` exit 1, are
+in [CI triage](../ansh-resolve/references/ci-triage.md).
 
-## Sentry (`sentry-cli`) — prod errors
+## Sentry (`sentry-cli`): prod errors
 
 ```bash
 sentry-cli issues list --org <org> --project <project> --query 'is:unresolved'
@@ -88,11 +87,11 @@ Use to attach a real stack trace / event count to a `/ansh-debug` root cause. Au
 ```bash
 kubectl get pods -A | grep <svc>;  kubectl logs -f <pod> --tail=200;  kubectl describe pod <pod>
 k9s                                    # TUI for fast triage
-argocd app get <app>;  argocd app list # deploy/sync state — is prod actually running your commit?
+argocd app get <app>;  argocd app list # deploy/sync state: is prod running your commit?
 aws ...                                # session-manager-plugin needed for SSM sessions (sudo install)
 ```
 Treat these as **diagnostic** in the loop. Any mutating command (`kubectl delete/apply`,
-`argocd app sync`, terraform apply) is a shared-state action — surface it, don't auto-run.
+`argocd app sync`, terraform apply) is a shared-state action. Surface it, don't auto-run.
 
 ## DB (see `/lightweight-sql` before querying a shared DB)
 
@@ -110,4 +109,4 @@ supabase ...                            # Supabase local/remote
   `skills/_shared/autonomy.md`.
 - **Missing token ≠ dead end, but ≠ workaround either.** Name the missing credential in the report.
 - **Verify, don't trust.** A trace/log/Sentry event is a *lead* toward root cause, same as a bot
-  comment — confirm against the code before you fix.
+  comment. Confirm against the code before you fix.

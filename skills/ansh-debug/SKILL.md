@@ -73,7 +73,7 @@ diagnosis note. Start on Sol, go to Astra per runtime.md.
 | Can't reproduce | Gather more signal (step 2), widen the repro. No fix on an unreproduced bug. |
 | Bot or reviewer comment names a cause | Treat it as a lead. Verify against the code first. |
 | Trace or log returns nothing | Read stderr. It explains "0 rows". |
-| `bun install --frozen-lockfile` exit 1 in CI | Usually the Playwright postinstall flake. Run it locally: exit 0 means retry the step, don't touch the lockfile. |
+| A CI failure looks like a known flake | Classify it with [CI triage](../ansh-resolve/references/ci-triage.md) before treating it as a bug. |
 | A CLI reports a missing token | Name the missing credential. Don't work around it. If nothing else can move, BLOCKED. |
 | Diagnosis needs a mutating command (`kubectl apply`, `argocd sync`, prod write) | Never run it. Use a branch DB or local stack. Park per autonomy.md if it can't be done another way. |
 | Two fixes failed on the same assumption | Attack the premise before a third. |
