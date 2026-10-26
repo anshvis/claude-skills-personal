@@ -1,116 +1,107 @@
 ---
 name: ansh-save
-description: "Freeze the current goal, progress, repository state, decisions and rationale, open questions, landmines and next steps into .ansh/saves/ for another session or provider to resume. Use /ansh-save, save context, or a request for a work handoff. This is a snapshot of in-progress work, not a new plan or a replacement for durable memory."
+description: Freeze in-flight work (goal, progress, repo state, decisions and why, open questions, landmines, ledger position, next steps) into .ansh/saves/ so another session or provider can resume it; use /ansh-save or when asked to save context or hand work off.
 ---
 
-# /ansh-save — Context freeze / handoff
+# /ansh-save
 
-**Runtime:** Read [ANSH runtime compatibility](../_shared/runtime.md) before starting.
-Use its tool, model, path and review mappings for provider-specific examples below.
+**Goal:** one file a fresh agent reads cold and resumes correctly from.
 
-Stopping mid-stream. The expensive thing in this chat isn't the code — that's on disk and in
-git. It's the **context that exists only in the conversation**: why this approach won over the
-one I ruled out, the landmine I already stepped on so the next session doesn't, the half-formed
-next step, the thread I'm waiting on. Lose that and the resume costs an hour of re-derivation.
+**Uses:** [ledger](../_shared/ledger.md), [autonomy](../_shared/autonomy.md) (decision trail),
+[runtime](../_shared/runtime.md), `.ansh/plan.md`, `.ansh/decisions.md`.
 
-This skill freezes that into one `.md` a future me (or a fresh agent) reads cold and continues.
+Code is on disk and in git. What's lost on a restart is the context that lives only in the
+conversation: why one approach beat another, the landmine already stepped on, the half-formed
+next step, the thing in flight. Capture that. This is synthesis, not new thinking: be thorough on
+capture, not clever.
 
-**Effort: cheap.** This is synthesis of what already happened, not new thinking. economy-tier.
-Be thorough on *capture*, not clever.
+## Steps
 
-## Where it writes
-
-```
-.ansh/saves/<YYYY-MM-DD>-<short-slug>.md   # one handoff, timestamped + named
-.ansh/saves/LATEST.md                       # symlink-or-copy pointer to the newest save
-```
-
-- `.ansh/` is the loop's gitignored working dir (same home as `plan.md`, `tasks/`,
-  `discoveries.md`). Create `.ansh/saves/` if absent.
-- Slug from the active ticket/branch (e.g. `rev-612-realtime-sync` → `rev-612-merge-cron`).
-- Get the date from `date +%F` — never guess it.
-- Multiple saves accumulate; newest wins. Don't overwrite an old one — append a new file so the
-  trail of where-I-was-when survives.
-
-## Process
-
-1. **Gather the machine-knowable state first** (don't make the human tell you what git knows):
+1. **Gather machine state first.** Don't reconstruct from memory what git knows:
    ```bash
-   git rev-parse --abbrev-ref HEAD
-   git log --oneline -15
-   git status --short
-   git log --oneline origin/main..HEAD          # what's on this branch vs base
-   gh pr view --json number,title,url,state,statusCheckRollup 2>/dev/null
-   gh pr checks 2>/dev/null
+   date +%F
+   git rev-parse --abbrev-ref HEAD; git rev-parse HEAD
+   git log --oneline -15; git status --short
+   git log --oneline origin/main..HEAD
+   gh pr view --json number,title,url,state,statusCheckRollup 2>/dev/null; gh pr checks 2>/dev/null
    ```
-   Also note the active Linear ticket (from the branch prefix) and read `.ansh/plan.md` /
-   `.ansh/discoveries.md` if they exist — fold their live state in, don't duplicate them.
-2. **Synthesize the conversation** into the template below. The bar: a competent stranger with
-   repo access reads only this file and resumes correctly. Capture the *why*, not just the *what*
-   — every non-obvious decision gets its rationale and what was rejected.
-3. **Write** the file, update `LATEST.md`, and confirm the path back to the user.
-4. If anything in the save is actually a durable cross-session fact (a preference, a recurring
-   gotcha, a project constraint), also offer to persist it to memory — the save file is
-   point-in-time and will go stale; memory is forever.
+   Note the ticket from the branch prefix. Read `.ansh/plan.md`, `.ansh/decisions.md` and
+   `.ansh/discoveries.md` if present. Link them, don't copy them.
+2. **Find the ledger position.** Read the last events for this goal or branch from
+   `~/.agentic-workflow/ansh/events.jsonl` (or `ANSH_LEDGER`): the last skill, phase, verdict,
+   task, attempt and SHA. That's where the loop stands.
+3. **Synthesize** the conversation into the template. Every non-obvious decision gets its reason
+   and what was ruled out.
+4. **Write** `.ansh/saves/<date>-<slug>.md` and copy it to `.ansh/saves/LATEST.md`. Slug from the
+   ticket or branch. Never overwrite an earlier save: the trail matters.
+5. **Route durable facts.** A preference, recurring gotcha or project constraint that outlives
+   this work goes to memory too. A recurring code mistake goes to `/ansh-correct`.
+6. Log `ansh-log ansh-save saved DONE --note "<save path>"`.
 
-## The template
+## Template
 
 ```markdown
-# Save: <title> — <YYYY-MM-DD>
+# Save: <title> (<date>)
 
-**Branch:** <branch>  ·  **Ticket(s):** <REV-xxx + links>  ·  **PR:** <#/url/state>
+Branch: <branch> | SHA: <sha> | Ticket: <id + link> | PR: <#, url, state>
 
 ## Goal
-<What we're actually trying to achieve, in 2-3 lines. The why, not just the task.>
+<2-3 lines. The why, not just the task.>
 
 ## Status
-- ✅ Done (with evidence): <commit shas / PRs / verified checks>
-- 🔄 In progress: <what's half-built, where exactly it stands>
-- ⬜ Not started: <remaining work>
+- Done (with evidence): <commits, PRs, verified checks, evidence dirs>
+- In progress: <what's half-built and exactly where it stands>
+- Not started: <remaining work>
+
+## Ledger position
+<last event: skill, phase, verdict, task, attempt, sha. Open REVISE or DEBUG and its reason.>
 
 ## Repo state
-- Last commits: <oneline list of the branch's commits vs base>
-- Working tree: <clean | the dirty files and what they are>
-- CI / checks: <passing | what's failing and the error>
+- Branch commits vs base: <oneline list>
+- Working tree: <clean | dirty files and what they are>
+- CI: <green | what's failing and the error>
 
-## Decisions made (and why)
-<The reasoning that lives only in the chat. For each: the call, the rationale, and what was
-ruled out. e.g. "Kept the mock UKG factory over dev's inline mocks — factory is the single
-type-break point; dropping it reintroduces the per-package fragility it was built to kill.">
+## Decisions (and why)
+<Each call, its reason, what was ruled out. Agent defaults and parks: see
+[.ansh/decisions.md](../decisions.md).>
 
-## Open questions / waiting on
-<Pending user decisions, unanswered questions, external things in flight (a review, a deploy).>
+## Open questions and things in flight
+<Unsettled facts and how to settle them, parked items, reviews or CI runs in flight.>
 
-## Landmines / gotchas
-<Things that already bit us or will bite the next session. e.g. "drizzle-kit generate surfaces
-unrelated audit.record_version casing drift — do NOT regenerate; hand-edit the snapshot.">
+## Landmines
+<What already bit us or will bite the next session.>
 
-## Next steps (ordered, actionable)
+## Next steps
 1. <concrete first move on resume>
-2. ...
 
 ## Pointers
-- Key files: <path:line — what's there>
-- Related: <plan.md sections, other tickets, skills to invoke on resume>
+- Files: <path:line, what's there>
+- Related: <plan sections, tickets, evidence dirs, skills to run on resume>
 
 ## How to resume
-<One line: "Read this, then run X / continue at step N.">
+<One line: read this, then run X or continue at step N.>
 ```
 
-## Resume (the other half)
+## Resume
 
-To pick back up: read `.ansh/saves/LATEST.md` (or the named save), reconstruct state from its
-Repo-state + Decisions sections, and start at its first Next step. If the branch moved since the
-save, trust git over the file and reconcile. A save older than the current HEAD is a starting
-point, not gospel — verify file/line pointers still resolve before acting on them (same caveat as
-recalled memories).
+Read `.ansh/saves/LATEST.md` (or the named save). Rebuild state from Repo state, Ledger position
+and Decisions. Start at the first next step. If the branch moved since the save, trust git and
+the ledger over the file. Check that `path:line` pointers still resolve before acting on them.
 
-## Boundaries
+## Edge cases
 
-- **Not memory.** Memory (`~/.claude/.../memory/`) is durable, cross-session, deduplicated facts.
-  A save is a disposable point-in-time snapshot of one work session. If a fact deserves to outlive
-  this work, route it to memory instead — don't let saves become a second, staler memory store.
-- **Not a plan.** `/ansh-plan` owns `.ansh/plan.md` (the durable understanding + subtask packets).
-  A save references the plan's live state; it doesn't replace or re-decompose it.
-- **Don't dump the transcript.** Synthesize. A 4000-word wall of chat is as useless on resume as
-  no notes — distill to decisions, state, and next moves.
+| case | do |
+|---|---|
+| No `.ansh/` dir | Create `.ansh/saves/`. `.ansh/` is the loop's gitignored working dir. |
+| No `.ansh/decisions.md` | Write `Decisions` inline and say there's no trail file. |
+| Ledger missing or no events for this goal | Write `Ledger position: none` and the reason. |
+| Not a git repo, or no PR | Skip those lines with a note. Don't invent them. |
+| Save older than HEAD on resume | Treat it as a starting point. Reconcile with git first. |
+| Tempted to paste the transcript | Don't. Distill to decisions, state and next moves. |
+
+Boundaries: a save isn't memory (durable cross-session facts) and isn't a plan (`/ansh-plan` owns
+`.ansh/plan.md`). It points at both and replaces neither.
+
+## Output
+
+`DONE` with the save path and the first next step.
