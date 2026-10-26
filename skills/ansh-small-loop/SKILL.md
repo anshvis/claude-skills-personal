@@ -58,11 +58,7 @@ You conduct. Planning, code and review each run in their own skill.
 ## Rules for the whole run
 
 - **Worktrees and commits** follow [worktrees](../_shared/worktrees.md).
-- **Topology.** A single-PR goal targets `main` and `Closes` its ticket. Otherwise the ticket's
-  branch is a long-lived integration branch with one umbrella PR to `main`, opened once, titled
-  after the parent and linked `Closes <PARENT>`. The work lands as small section PRs into the
-  integration branch, small-first in dependency order. A section PR doesn't have to ship against
-  `main` alone. Size test: more than ~8-10 files or mixed layers means split it.
+- **Topology** follows [stacking](../_shared/stacking.md).
 - **Branches, PR links and ticket status** follow [tickets](../_shared/tickets.md).
 - **`.ansh/` stays local.** Use the local exclude from `/ansh-plan` step 6, never the tracked
   `.gitignore`. Same for any agent scratch.

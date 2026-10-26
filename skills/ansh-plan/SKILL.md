@@ -12,7 +12,7 @@ description: "Turn a TDD, Linear ticket or prose goal into milestones and self-c
 [ledger](../_shared/ledger.md), [runtime](../_shared/runtime.md),
 [stacking](../_shared/stacking.md), [tickets](../_shared/tickets.md), [packet template](references/packet.md),
 [plan.json](references/plan-json.md), `effort-dial`, `gold-star`, `lightweight-sql`,
-`/ansh-small-loop` (PR topology and linking), `/ansh-loop`.
+`/ansh-small-loop`, `/ansh-loop`.
 
 You write no code. Plan on Astra at high effort; a Deep goal gets max. Take your time here: a
 sloppy plan makes every later round more expensive.
@@ -64,8 +64,8 @@ sloppy plan makes every later round more expensive.
    - Stamp `autonomy: full` on every task. Add `parked_at_merge: true` where milestones or autonomy
      say the merge is irreversible.
    - Group tasks into `prs[]`: the smallest set of tight PRs, one layer each. If the goal collapses
-     to one PR, write in `plan.md` why the layers can't be cut. Several PRs use the integration
-     topology in `/ansh-small-loop`. Record each PR's `base` per stacking.
+     to one PR, write in `plan.md` why the layers can't be cut. Several PRs use the topology in
+     [stacking](../_shared/stacking.md). Record each PR's `base` there too.
    - When the goal has tickets, every code task names one. Untracked work is pure scaffolding only;
      note it in `plan.md`.
    - Name every branch and write every `prs[].links` entry per [tickets](../_shared/tickets.md), so

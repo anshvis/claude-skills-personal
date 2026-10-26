@@ -1,10 +1,19 @@
 # Stacking and staying current
 
-Shared by `/ansh-task`, `/ansh-small-loop`, `/ansh-loop` and `/ansh-pr-loop`. One copy, so the
-rules don't drift between skills.
+Shared by `/ansh-plan`, `/ansh-task`, `/ansh-ship` and `/ansh-pr-loop`. One copy, so the rules
+don't drift between skills.
 
 Most broken stacks come from three mistakes: a branch cut from a stale local ref, a PR whose base
 is not the branch it was built on, and a rebase or force-push under a PR that others build on.
+
+## Topology
+
+- A single-PR goal targets `main` and closes its ticket.
+- Anything bigger gets a long-lived integration branch (the ticket's or parent's branch) with one
+  umbrella PR to `main`, opened once, titled after the parent. The work lands as small section PRs
+  into the integration branch, small-first in dependency order. The umbrella merges last.
+- A section PR doesn't have to ship against `main` alone. Size test: more than ~8-10 files or mixed
+  layers means split it.
 
 ## The base of a branch
 
