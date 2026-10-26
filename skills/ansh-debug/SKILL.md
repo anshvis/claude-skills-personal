@@ -10,7 +10,7 @@ description: "Take a bug to a confirmed root cause, then a fix and a regression 
 **Uses:** [runtime](../_shared/runtime.md), [autonomy](../_shared/autonomy.md),
 [verification](../_shared/verification.md), [principles](../_shared/principles.md),
 [ledger](../_shared/ledger.md) (`../_shared/ansh-log`), [worktrees](../_shared/worktrees.md), [CLI tools](../_shared/cli-tools.md),
-[/ansh-task](../ansh-task/SKILL.md), [/ansh-plan](../ansh-plan/SKILL.md),
+[/ansh-cycle](../ansh-cycle/SKILL.md), [/ansh-plan](../ansh-plan/SKILL.md),
 [/ansh-verify](../ansh-verify/SKILL.md), [/ansh-control](../ansh-control/SKILL.md), [/codex](../codex/SKILL.md),
 [/lightweight-sql](../lightweight-sql/SKILL.md).
 
@@ -54,14 +54,15 @@ diagnosis note. Start on Sol, go to Astra per runtime.md.
    carries the one-line root cause (so the fix targets the cause), and a `## Verification` whose
    red-first check is the regression check from step 3, plus the callers from the blast radius.
 8. **Size it.** Small: roughly 5 files or fewer, no shared, migration or customer-facing surface,
-   no behavior change beyond the fix. Run `/ansh-task <id>` on the packet now, in this session if
-   that's cheaper. Larger: route the packets to `/ansh-plan` as new deep-lane work, return
-   NEEDS_REPLAN, and let the orchestrator run them.
+   no behavior change beyond the fix. Called from `/ansh-cycle`: return the packets, it runs them.
+   Called directly: run `/ansh-cycle <id>` on each. Larger: route the packets to `/ansh-plan` as
+   new deep-lane work and return NEEDS_REPLAN.
 9. **Keep the test running.** Add the regression check to the owning feature's verification: the
    milestone's Regression line in `.ansh/plan.md` and the feature map entry via `/ansh-verify
    maintain`. A regression test that only ran once doesn't count.
-10. **Verify and record.** Fresh repro shows the symptom gone. The regression check is green at the
-    head SHA through `/ansh-verify run`. Append to `## Learnings` at the end of `.ansh/plan.md`
+10. **Verify and record.** Called directly: once the fix packets pass, a fresh repro shows the
+    symptom gone and the regression check is green at the head SHA through `/ansh-verify run`.
+    Called from `/ansh-cycle`: its review of the fix packets proves this. Append to `## Learnings` at the end of `.ansh/plan.md`
     (create it if absent): key, one-line root cause, confidence 1-10, affected files. `/ansh-plan`
     reads it on re-entry. Log `ansh-log ansh-debug fix-verified DONE --task <id>`.
 
@@ -90,7 +91,7 @@ diagnosis note. Start on Sol, go to Astra per runtime.md.
 - Principles that changed a decision, and what they changed.
 
 End with one status:
-- **DONE**: root cause confirmed, fix applied through `/ansh-task`, regression check green at the
-  head SHA and part of the feature's verification.
+- **DONE**: root cause confirmed, fix packets written (and, when called directly, passed through
+  `/ansh-cycle`), regression check part of the feature's verification.
 - **NEEDS_REPLAN**: the fix is large or architectural. Packets are queued for `/ansh-plan`.
 - **BLOCKED**: three hypotheses failed or a tool or credential is missing. Say what's needed.
