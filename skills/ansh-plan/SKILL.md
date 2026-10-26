@@ -99,7 +99,7 @@ sloppy plan makes every later round more expensive.
    - `plan.md`: your reading of the goal, the problem, architecture and data flow, constraints,
      a link to `decisions.md` (D-n live there), milestone blocks, the three lists, and
      the task index with deps. Add a feature-wide edge-case analysis. Push each edge case into the
-     packet that owns it; leave cross-task ones flagged here for the whole-goal evaluation.
+     packet that owns it; leave cross-task ones flagged here for `/ansh-review goal`.
    - `plan.json` per [the schema](references/plan-json.md).
    - `tasks/<id>.md` per [the packet template](references/packet.md).
    - `discoveries.md` (specialists append) and `decisions.md` (the decision trail in autonomy).

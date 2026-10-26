@@ -24,9 +24,9 @@ means it runs inside a Workflow script (see step 5).
 2. **Size check.** A Deep stamp goes to `/ansh-plan` re-entry to split before dispatch. If the
    planner returned it as irreducible (DONE_WITH_CONCERNS naming it), run it on Astra and treat
    it as `deep`.
-3. **Do.** Dispatch `/ansh-task <id>` in a fresh subagent per autonomy's subagent rules, with the
-   model and effort from the stamp (runtime). Each later round gets a fresh subagent too, briefed
-   with the packet, every later decision, and the previous round's report and branch.
+3. **Do.** Dispatch `/ansh-task <id>` in a fresh subagent for every round, briefed per autonomy's
+   [subagent rules](../_shared/autonomy.md#subagents), with the model and effort from the stamp
+   (runtime).
    - DONE: go to step 4.
    - NEEDS_REPLAN: a round. Route to `/ansh-plan` re-entry (step 5), then dispatch again.
    - BLOCKED on a base or missing dependency: fix the base per stacking and dispatch again. Not a
@@ -47,8 +47,8 @@ means it runs inside a Workflow script (see step 5).
      re-runs `/ansh-cycle` in the next wave.
 6. **Budget.** Count rounds per autonomy's stop conditions and write `rounds` and `replans` to
    `plan.json` after each one. At the round cap, one `/ansh-plan` re-entry buys the second
-   allowance. When that runs out, set `status` back to `todo`, log BLOCKED, and return BLOCKED with
-   each round's evidence. Never relax a check to pass.
+   allowance. When that runs out, log BLOCKED and return BLOCKED with each round's evidence. A
+   plateau means a new approach through re-entry, never a relaxed check (autonomy).
 7. **Log** each round: `ansh-log ansh-cycle round <PASS|REVISE|DEBUG|NEEDS_REPLAN|BLOCKED> --task <id>
    --attempt <n> --reason <reason>`.
 
@@ -57,8 +57,6 @@ means it runs inside a Workflow script (see step 5).
 | case | do |
 |---|---|
 | Task's packet names an unlanded prerequisite | Return BLOCKED naming it. The conductor holds it back. |
-| Same verification fails after the cap and a replan | BLOCKED with every round's evidence. |
-| Verification plateaus | Change approach through `/ansh-plan` re-entry. Never relax a check. |
 | `/ansh-review` returns BLOCKED (no fresh context for the deep lane) | Return BLOCKED with what's needed. |
 | A model looks too weak after a failed round | Escalate per runtime and log it to `.ansh/decisions.md`. |
 | Task is `parked_at_merge` | Drive it to PASS like any other. Parking happens at merge. |
