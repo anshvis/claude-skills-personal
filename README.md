@@ -1,6 +1,6 @@
 # ansh-personal skills
 
-Personal, provider-neutral skill sources bundling my personal `/ansh-*` Karpathy-loop skills (orchestrator + plan/task/review/codex/debug/resolve/save), the glue skills they call (effort-dial, chill-describe, gold-star, linear-sync, lightweight-sql), and web-handoff/web-read. `ANSH.md` is the loop index.
+Personal, provider-neutral skill sources: my `/ansh-*` skills, which take a ticket or TDD to a merged, verified PR without a human in the loop, the glue skills they call, and a few standalone helpers. `ANSH.md` is the index.
 
 Private repo → visible only to me and my agents.
 
@@ -12,8 +12,8 @@ git clone https://github.com/anshvis/claude-skills-personal.git ~/claude-skills-
 ```
 
 Defaults to Claude and Codex. Claude keeps the complete existing skill catalog under
-`~/.claude/skills/` and its agent definitions under `~/.claude/agents/`. Codex and local ChatGPT coding sessions get the complete 30-skill catalog, including all ten
-`ansh-*` skills and every helper/nested workflow, under `~/.agents/skills/`. Claude links directly to the sources. Codex links to a complete local mirror outside the
+`~/.claude/skills/` and its agent definitions under `~/.claude/agents/`. Codex and local ChatGPT coding sessions get the complete skill catalog, including every
+`ansh-*` skill and every helper/nested workflow, under `~/.agents/skills/`. Claude links directly to the sources. Codex links to a complete local mirror outside the
 Claude plugin directory so names stay plain, such as `$ansh-plan`. The mirror includes
 the full runtime guide, CLI references and reviewer prompts. Re-run setup after source
 updates to refresh it.
@@ -50,6 +50,7 @@ new service connections are installed by this setup.
 Skills are namespaced under the plugin, e.g. `/ansh-personal:ansh-loop`.
 
 ## Caveats
+- The iteration ledger (`skills/_shared/ansh-log`) needs `jq`. Without it, events are skipped with a warning and nothing else breaks.
 - Namespacing: skills that call each other by bare name (e.g. `/ansh-plan`) may need the `ansh-personal:` prefix.
 - On Claude Code Web, plugin sub-agents and hooks are limited (fully supported in Desktop/Cowork), so the loop is degraded there.
 - The loop's `.ansh/` scratch state is per-machine/sandbox and does not sync.

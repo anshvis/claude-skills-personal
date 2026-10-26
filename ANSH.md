@@ -1,155 +1,69 @@
-# /ansh — Ansh's curated skill arsenal
+# /ansh
 
-Shared across Claude Code and Codex. Read [runtime compatibility](skills/_shared/runtime.md)
-for tool/model mappings and fallback behavior. Slash names identify workflows; Codex can
-invoke them as `$ansh-plan`, `$ansh-task`, etc. Model tiers are recommendations, not switches. Quality takes priority over cost.
-Default implementation/debugging to GPT-6.1 Sol high; use GPT-6 Astra high/xhigh for planning,
-review and difficult work. Luna is reserved for verified mechanical work. Upgrade proactively
-when confidence or risk warrants it; the runtime guide overrides older cheap-model wording.
+My skill set for taking a ticket or TDD to a merged, verified PR without me in the loop. I write
+feature success (the numbered ACs). The skills do the rest and prove it with CLI or web evidence.
+Everything under `/ansh-` is mine and current. The `SKILL.md` files are the source of truth; this
+file is the index.
 
+Runs on Claude Code (`/ansh-plan`) and Codex (`$ansh-plan`). See [runtime](skills/_shared/runtime.md).
 
-The authoritative, precise list of the skills I drive my work with. Everything under the
-`/ansh-` prefix is **mine — edited, current, and trustworthy**. Non-`/ansh-` project skills
-(`/chill-describe`, `/gold-star`, `/linear-sync`, `/lightweight-sql`, `/effort-dial`,
-`/review-fresh`, `/loop`) are dependencies these call by
-name; I keep `/ansh-` as the master set. I don't lean on gstack day-to-day anymore, so the
-`/ansh-` skills describe their own logic directly (codex CLI invocation, PR creation, etc.)
-rather than delegating to gstack skills.
+## Shared rules
 
-Architecture: the **Karpathy loop** — a planner decomposes, cheap specialists execute, an
-evaluator scores against explicit criteria, and the loop revises until a quality bar is met.
-Reference: generator → evaluator → revise, with role separation by model.
+| Doc | Owns |
+|---|---|
+| [autonomy](skills/_shared/autonomy.md) | No human in the loop, agent defaults, never-do list and parking, merge rule, stop conditions, subagents |
+| [verification](skills/_shared/verification.md) | The verification contract, surface classes, regression, perf, evidence packs |
+| [milestones](skills/_shared/milestones.md) | The `Implementation milestones` section added to web-app's spec-doc TDDs |
+| [principles](skills/_shared/principles.md) | The engineering bar (from pstack) |
+| [ledger](skills/_shared/ledger.md) | Iteration events via `ansh-log` |
+| [stacking](skills/_shared/stacking.md) | Branch bases, merge order, never rewriting shared branches |
+| [runtime](skills/_shared/runtime.md) | Host mapping, model routing, independent review |
 
-## The set
+## Skills
 
-Effort ladder — thinking is most expensive where it has the most leverage: **planner > reviewer >
-debug ≈ specialist.** Every level is **dial-driven**: `effort-dial` (run at `/ansh-small-loop` Step 0,
-re-diagnosable per subtask) picks the Standard or Deep setting. The ordering holds at every tier;
-the absolute level slides with the goal.
+| Skill | Goal |
+|---|---|
+| [`/ansh-small-loop`](skills/ansh-small-loop/SKILL.md) | One scoped ticket to a merged, verified PR. |
+| [`/ansh-loop`](skills/ansh-loop/SKILL.md) | A project to merged, verified PRs, in dependency-ordered waves. |
+| [`/ansh-plan`](skills/ansh-plan/SKILL.md) | TDD or ticket to milestones and self-contained task packets with verification contracts. |
+| [`/ansh-task`](skills/ansh-task/SKILL.md) | One packet to the smallest diff that makes its red-first check pass. |
+| [`/ansh-verify`](skills/ansh-verify/SKILL.md) | Own the harness: feature map (local), run contracts, write evidence. |
+| [`/ansh-review`](skills/ansh-review/SKILL.md) | Independent verdict: rerun verification, plan gap, blast radius, merge lane. |
+| [`/ansh-debug`](skills/ansh-debug/SKILL.md) | Bug to confirmed root cause, fix and a regression check that keeps running. |
+| [`/ansh-resolve`](skills/ansh-resolve/SKILL.md) | One pass over a PR's CI failures and review comments. |
+| [`/ansh-pr-loop`](skills/ansh-pr-loop/SKILL.md) | Resolve until mergeable, then merge under the merge rule. |
+| [`/ansh-correct`](skills/ansh-correct/SKILL.md) | Turn a repeated mistake into a lint, type or CI check. PRs wait for my review. |
+| [`/ansh-retro`](skills/ansh-retro/SKILL.md) | Read the ledger and propose cuts to these skills, with the numbers. |
+| [`/ansh-think`](skills/ansh-think/SKILL.md) | Options and tradeoffs to a recommendation. No code. |
+| [`/ansh-save`](skills/ansh-save/SKILL.md) | Freeze in-flight state so another session can resume it. |
 
-| Command | Role | Model / effort (Standard → Deep) | One-liner |
-|---|---|---|---|
-| **`/ansh-small-loop`** | Orchestrator (small) | reasoning, conductor | For small, scoped tickets only. Runs plan→execute→evaluate→revise→ship→resolve as a closed loop with explicit termination. A project-scale goal (spans a Linear project, needs a real architecture/product call, shape not settled) gets handed off to `/ansh-loop` at Step -1. |
-| **`/ansh-loop`** | Orchestrator (project) | reasoning, conductor | For project-scale goals only — spans a Linear project/multiple parent tickets. Runs strictly after `/ansh-plan` has produced guardrails + acceptance_criteria + exit_criteria; gates on an explicit human sign-off of those three lists (`AskUserQuestion`, no auto-pick) before any execution; then fans out subtasks/sections via dynamic **Workflows** (`pipeline()`/`parallel()`) instead of a serial walk. A single scoped ticket gets redirected to `/ansh-small-loop`. |
-| **`/ansh-plan`** | Planner | **reasoning high → reasoning high + extended thinking** (top) | Goal (Linear OR prose) → machine-readable subtask list, each stamped with model + effort + done-criteria + edge cases. Then a **independent plan challenge** attacks the plan (missing subtasks, bad ordering, weak criteria, missed edge cases) before hand-off. Linear-optional. |
-| **`/ansh-review`** | Evaluator | **reasoning medium → reasoning high + thinking** (one below planner) | Thinking role; never cheap. Scores output vs done-criteria, verifies flagged edge cases. Runs a **independent review pass on every evaluation** as the baseline bug hunt; adds review-fresh / swarm on top for high-risk. Returns PASS / REVISE / DEBUG. |
-| **`/ansh-debug`** | Bug feedback loop | **economy medium → reasoning med/high** (only climbs when stuck) | Starts cheap — review/comments already handed it a lead. Root-causes, emits fix-subtasks, dispatches through `/ansh-task`. 3-strike rule = escalation trigger. |
-| **`/ansh-task`** | Specialist | **economy low → economy medium** (cheap execution) | Executes ONE scoped subtask, self-verifies against its done-criteria, stops. Minimal ceremony. Kicks back if low-conviction. |
-| **`/ansh-resolve`** | Outer loop | economy/reasoning, medium | Post-push: combs CI checks + bot/human review comments + Linear; triages; dispatches fixes; closes threads. |
-| **`/ansh-pr-loop`** | Recurring outer loop | economy/reasoning, medium | Runs `/ansh-resolve` on a ~5-min self-pacing cadence until CI is green and no review blocks — dismisses a stuck BOT review once its findings are verifiably fixed (never dismisses a human review), then asks before merging. Use to babysit a PR to mergeable instead of one manual `/ansh-resolve` pass. |
-| **`/ansh-save`** | Handoff / context-freeze | economy, cheap | Stopping mid-stream: freezes the chat-only context (goal, done/not-done, repo state, decisions + why, landmines, next steps) into a resumable `.ansh/saves/<date>-<slug>.md`. A fresh session resumes cold from it. Not memory, not a plan. |
+Glue they call by name: `effort-dial` (size the work), `chill-describe` (every commit and PR),
+`gold-star` (hold work to a reference), `lightweight-sql` (any SQL or Drizzle diff), `linear-sync`
+(reconcile tickets), `review-fresh` and `codex` (independent review), `claude-fix-prompt` (make a
+shallow ask deeper before planning). From agentic-workflow: `ui-evidence`, `verify-web`,
+`verify-ios`. CLI map for debugging and CI: [ANSH-cli-tools.md](ANSH-cli-tools.md).
 
-## The plan→task contract (self-contained packets + conviction gate)
+## How a run goes
 
-The planner does the expensive thinking once and bakes it into disk so the cheap specialists need
-almost nothing else. Working state lives in `.ansh/` (gitignored):
-
-- **`.ansh/plan.md`** — the reasoning-level high context (problem, architecture, decisions, DoD). The
-  durable understanding; the orchestrator and evaluator read it, specialists usually don't need to.
-- **`.ansh/plan.json`** — machine index: subtask ids, stamps, deps, status, packet path.
-- **`.ansh/tasks/<id>.md`** — one **self-contained packet** per subtask: objective, context, exact
-  files to change, gold-star references to mirror, all questions already answered, **edge cases /
-  "watch out for" + tests to write** (the planner's edge-case thinking, pushed down per subtask),
-  and testable done-criteria. A fresh economy agent executes from this alone; `/ansh-review` checks
-  the edge cases were handled.
-- **`.ansh/discoveries.md`** — append-only log where specialists report things that need
-  higher-level context. Raw signal for the planner; not a place anyone proposes solutions.
-
-Two rules enforce the contract:
-- **Conviction gate** — `/ansh-task` reads its packet and, if it lacks high conviction it can
-  finish from the packet alone, does NOT start. It writes the gap to `.ansh/discoveries.md` and
-  returns `NEEDS_REPLAN`.
-- **No redirect by the cheap agent** — specialists never change direction. All direction and
-  changes of direction are owned by `/ansh-plan` or the human. The planner folds discoveries into
-  the durable context and reframes; genuine judgment calls escalate to the human via
-  `AskUserQuestion`.
-
-## The fresh-eyes rule (when to bring in an outside perspective)
-
-The evaluator is *"a second agent, or the same agent with a different prompt context."* The
-strongest second agent is a different model:
-
-- **Independent review** (every evaluation): prefer a genuinely different available model,
-  otherwise a fresh-context reviewer. Record the actual provider/model and independence.
-- **In-session adversarial**: always run alongside the outside review. If no delegation is
-  available, record the reduced independence; do not claim cross-model review happened.
-- **`review-fresh`**: fresh-context reviewers for high-risk work. Its capture rebases the branch
-  and requires a clean tree. For unfinished diffs use a read-only fresh reviewer instead;
-  if the required fresh context is unavailable, report BLOCKED.
-- **`swarm`**: dimension reviewers with verified findings for large diffs; use available
-  delegation and serialize when necessary.
-- Resolve reviewer disagreements from code evidence and retain unresolved objections.
-
-## Glue skills (kept as-is, called by name — NOT forked)
-
-These are cross-cutting helpers the `/ansh-` skills invoke. They're good as they are; do not
-duplicate them under `/ansh-`:
-
-- **`effort-dial`** — 5-axis tier diagnostic. `/ansh-plan` reuses it to stamp each subtask; `/ansh-small-loop` uses it to right-size the whole goal (`/ansh-loop` doesn't re-run it at the goal level — the plan it requires already stamped every subtask). (🟢 Quick→economy/low, 🟡 Standard→economy/med, 🔴 Deep→reasoning/high.)
-- **`chill-describe`** — commit/PR style. Mandatory before every git/gh write.
-- **`gold-star`** — hold work to a named reference implementation. Surface divergence in review.
-- **`linear-sync`** — reconcile a ticket with reality after shipping.
-- **`lightweight-sql`** — minimize DB load on any SQL/Drizzle diff.
-- **`claude-fix-prompt`** — rewrite a prompt into a deeper (not bigger) version of the same task: what a top professional would do, the rawest material to start from, the named methods/tools, and an external check on the result. Run before handing a goal to `/ansh-plan` when the ask feels shallow.
-
-## CLI arsenal (reference, not a skill)
-
-**`ANSH-cli-tools.md`** (sibling of this file) — the debugging/resolution CLI map that
-`/ansh-debug` (Phase 1) and `/ansh-resolve` (Phase 1 & 4) pull from: `signoz` (prod traces/logs),
-`bk` (Buildkite CI logs + flaky-step retry — `gh` can't read Buildkite), `sentry-cli` (prod
-errors), plus `kubectl`/`k9s`/`argocd`/`psql`/`pscale`/`supabase`/`temporal`. Credentials + PATH
-live in `~/.config/ansh-cli/env.sh` (git-excluded, chmod 600); source it before use. The rule:
-**pull the primary source yourself instead of asking the human to paste a log** — but keep it
-read-only, and name any missing token rather than working around it.
-
-**`/codex`** is the explicitly Codex-specific CLI helper, still available for direct use.
-ANSH's default challenge/review follows runtime routing so it works from either host. A second
-Codex process is not assumed to use a different model. Report missing authentication or tooling
-without claiming a successful review.
-
-## Relationship to /solve-linear-ticket
-
-`/solve-linear-ticket` is the linear (non-looping) predecessor. Its genuinely useful parts —
-fetching ticket context, clarifying scope, the In-Progress transition — now live in `/ansh-plan`,
-which works **with or without** a Linear ticket. Reach for `/ansh-small-loop` (single ticket) or
-`/ansh-loop` (project) as the canonical end-to-end runners; `/solve-linear-ticket` stays available
-but isn't the default.
-
-## How a session typically flows
-
-Small, scoped ticket:
 ```
-/ansh-small-loop "REV-712: availability requests drop the timezone on overnight shifts"
-  → effort-dial: Deep (touches shared scheduling + tz)
-  → /ansh-plan       → 4 subtasks, T1-T2 Quick, T3-T4 Standard, T3 flagged review-fresh
-  → /ansh-task T1    → done; /ansh-review T1 → PASS
-  → /ansh-task T3    → done; /ansh-review T3 (review-fresh, tz/shared) → DEBUG (off-by-one at DST)
-  → /ansh-debug      → root cause confirmed, writes T5 (fix + regression test), dispatches /ansh-task T5
-  → /ansh-review T5  → PASS
-  → whole-goal eval (independent review, landing gate) → PASS
-  → commit + open PR via git/gh (chill-describe format) → PR up
-  → /ansh-resolve    → Cursor flagged a nil case; /ansh-task fixes it; checks green; threads closed
+TDD (spec-doc + milestones, ACs written by me)
+  -> /ansh-plan     Phase 0 checks the TDD, packets with red-first checks, plan challenge
+  -> per task:  /ansh-task -> /ansh-verify run -> /ansh-review
+                  PASS -> next | REVISE -> /ansh-task | DEBUG -> /ansh-debug -> new packets
+  -> whole-goal review against the ACs
+  -> PRs via stacking + chill-describe -> /ansh-pr-loop -> merged (or parked, with the reason)
+  -> report: shipped, parked, agent defaults, inferred ACs, .ansh/decisions.md
+weekly: /ansh-retro (skills) and /ansh-correct (repo checks)
 ```
 
-Project-scale goal:
-```
-/ansh-plan "REV-1157: payrule threshold rework across the accrual + reporting stack"
-  → 4 sections, 11 subtasks, guardrails/acceptance_criteria/exit_criteria written
-  → codex challenge pass folds in 2 missed edge cases
-/ansh-loop
-  → Step -1: project-scale, stays in this loop
-  → Step 0: plan.json has all three criteria lists — proceeds
-  → Step 1: AskUserQuestion walks guardrails, acceptance_criteria, exit_criteria — confirmed
-  → Step 2: Workflow fans out section 1 + section 2 (independent) via pipeline()/parallel();
-            section 3 waits on section 1's deps
-  → whole-goal eval vs acceptance_criteria → PASS
-  → 4 section PRs → integration branch → umbrella PR → main
-  → /ansh-resolve per section as each lands
-  → DONE
-```
+## State
 
-## Keeping this list current
+- `.ansh/` in the repo (git-excluded): `plan.md`, `plan.json`, `tasks/<id>.md`, `discoveries.md`,
+  `decisions.md`.
+- `~/.agentic-workflow/ansh/events.jsonl`: the iteration ledger.
+- `~/.agentic-workflow/<repo-slug>/feature-map/` and `evidence/`: local, not committed.
+- `~/.agentic-workflow/ansh-pr-loop/outcomes.jsonl`: merge outcomes.
 
-When I change how I work, I edit the `/ansh-` skill, then update its row here. This file is the
-index; the SKILL.md files are the source of truth. New curated skill → add `/ansh-<name>`, add a
-row. Retired → remove both.
+## Keeping this current
+
+Change a skill, then its row here. New skill: add `/ansh-<name>` and a row. Retired: remove both.
