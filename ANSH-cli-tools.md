@@ -106,7 +106,8 @@ supabase ...                            # Supabase local/remote
 
 - **Read-only by default.** These tools exist to *understand* the failure. Retrying a flaky CI
   step is fine; deploys, DB writes/schema pushes, `kubectl apply/delete`, `argocd sync`, terraform
-  apply are outward/shared-state — get a heads-up first (working-agreement rule).
-- **Missing token ≠ dead end, but ≠ workaround either.** Name the missing credential to the user.
+  apply are outward/shared-state. Never run them from an `/ansh` run: park the work per
+  `skills/_shared/autonomy.md`.
+- **Missing token ≠ dead end, but ≠ workaround either.** Name the missing credential in the report.
 - **Verify, don't trust.** A trace/log/Sentry event is a *lead* toward root cause, same as a bot
   comment — confirm against the code before you fix.

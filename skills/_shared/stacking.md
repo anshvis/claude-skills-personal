@@ -59,10 +59,11 @@ the plan says the work is stacked.
 Keep stacked, integration and already-pushed branches current by **merging**, never by rebasing,
 squashing or force-pushing. Other sessions and the PRs above build on them. If a tool wants to
 rebase (for example `/review-fresh`'s capture), review from a detached temporary worktree at the
-branch head instead (`git diff origin/<base>...HEAD`). Ask the user before any force-push.
+branch head instead (`git diff origin/<base>...HEAD`). Never force-push a shared branch. It's on the
+never-do list in [autonomy](autonomy.md).
 
 ## Merge order
 
 A PR merges only after every PR it depends on has merged, and only when its base is current.
 `/ansh-pr-loop` checks both before merging, and holds the PR (it does not merge it) while a
-dependency is still open or waiting for manual review.
+dependency is still open or parked.
