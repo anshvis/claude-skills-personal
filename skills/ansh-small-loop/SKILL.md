@@ -57,13 +57,7 @@ You conduct. Planning, code and review each run in their own skill.
 
 ## Rules for the whole run
 
-- **One worktree per work item.** A sibling of `web-app`, never nested in it, with `bun install` run.
-  Create it if none exists; reuse it for every task, debug and resolve pass of that item. A
-  different ticket or epic gets its own worktree and a fresh session. A read-only lookup elsewhere
-  is fine; edits and branch work are not.
-- **Small per-change commits.** One logical change each (a migration, a concept, a resolver, its
-  tests), so any one can be reverted. Each task commits before it verifies, so review judges a real SHA. Never leave verified work
-  uncommitted: a worktree cleanup then becomes data loss.
+- **Worktrees and commits** follow [worktrees](../_shared/worktrees.md).
 - **Topology.** A single-PR goal targets `main` and `Closes` its ticket. Otherwise the ticket's
   branch is a long-lived integration branch with one umbrella PR to `main`, opened once, titled
   after the parent and linked `Closes <PARENT>`. The work lands as small section PRs into the

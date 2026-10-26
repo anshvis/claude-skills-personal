@@ -9,7 +9,7 @@ description: "Take a bug to a confirmed root cause, then a fix and a regression 
 
 **Uses:** [runtime](../_shared/runtime.md), [autonomy](../_shared/autonomy.md),
 [verification](../_shared/verification.md), [principles](../_shared/principles.md),
-[ledger](../_shared/ledger.md) (`../_shared/ansh-log`), [CLI tools](../_shared/cli-tools.md),
+[ledger](../_shared/ledger.md) (`../_shared/ansh-log`), [worktrees](../_shared/worktrees.md), [CLI tools](../_shared/cli-tools.md),
 [/ansh-task](../ansh-task/SKILL.md), [/ansh-plan](../ansh-plan/SKILL.md),
 [/ansh-verify](../ansh-verify/SKILL.md), [/ansh-control](../ansh-control/SKILL.md), [/codex](../codex/SKILL.md),
 [/lightweight-sql](../lightweight-sql/SKILL.md).
@@ -20,9 +20,8 @@ diagnosis note. Start on Sol, go to Astra per runtime.md.
 
 ## Steps
 
-1. **Worktree.** One worktree per work item: a sibling of `web-app`, never nested, `bun install`
-   run in it. Reuse it if it exists. Don't fix an unrelated item's bug in whatever worktree is
-   current.
+1. **Worktree.** Work in the bug's own worktree per [worktrees](../_shared/worktrees.md). Don't
+   fix an unrelated item's bug in whatever worktree is current.
 2. **Gather context.** Collect the exact error, repro steps and when it started.
    - Read the implicated code and `git log` for the area. Recurring bugs in the same files are an
      architectural smell: note it for step 8.

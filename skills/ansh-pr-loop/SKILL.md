@@ -26,7 +26,7 @@ Arguments: `/ansh-pr-loop [<n>] [via=ansh-loop|ansh-small-loop] [reviewed]`, or
 
 1. **Identify the PR once.** Take `<n>`, or resolve it from the current branch
    (`gh pr view --json number,url,headRefName`). Name it in the first status line. Work in the
-   worktree that tracks its branch. Check ownership: PR author against `gh api user -q .login`. Not mine: read-only from here on.
+   worktree that tracks its branch ([worktrees](../_shared/worktrees.md)). Check ownership: PR author against `gh api user -q .login`. Not mine: read-only from here on.
    Run the gate locally and report. No pushes, comments, fixes or merges (autonomy).
 2. **Pin the head.** `git fetch origin`. If `git merge-base --is-ancestor origin/<base> HEAD`
    fails, merge the base in and push per [stacking](../_shared/stacking.md). Record the head SHA.

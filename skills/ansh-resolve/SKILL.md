@@ -12,13 +12,12 @@ evidence, or answered, with a visible trace on the PR.
 [`/chill-describe`](../chill-describe/SKILL.md), [autonomy](../_shared/autonomy.md),
 [verification](../_shared/verification.md), [principles](../_shared/principles.md),
 [stacking](../_shared/stacking.md), [ledger](../_shared/ledger.md) with `_shared/ansh-log`,
-[runtime](../_shared/runtime.md), [`_shared/cli-tools.md`](../_shared/cli-tools.md),
+[runtime](../_shared/runtime.md), [worktrees](../_shared/worktrees.md), [`_shared/cli-tools.md`](../_shared/cli-tools.md),
 [CI triage](references/ci-triage.md), [GitHub recipes](references/github.md).
 
 ## Steps
 
-1. **Pick the worktree.** Work in the worktree that tracks this PR's branch. Create one (sibling
-   of the repo, deps installed) if none exists. Never resolve a PR from another branch's worktree.
+1. **Pick the worktree** that tracks this PR's branch, per [worktrees](../_shared/worktrees.md).
 2. **Gather.** Pull the PR state, checks on the head SHA, review threads, review bodies (including
    on `APPROVED` and `COMMENTED` reviews), top-level comments ([GitHub recipes](references/github.md)),
    and comments on every Linear ticket the PR links (`list_comments`). Note our own login so

@@ -9,7 +9,7 @@ description: "Turn one task packet from .ansh/tasks/ into the smallest diff that
 
 **Uses:** [runtime](../_shared/runtime.md), [autonomy](../_shared/autonomy.md),
 [verification](../_shared/verification.md), [principles](../_shared/principles.md),
-[stacking](../_shared/stacking.md), [ledger](../_shared/ledger.md) (`../_shared/ansh-log`),
+[stacking](../_shared/stacking.md), [worktrees](../_shared/worktrees.md), [ledger](../_shared/ledger.md) (`../_shared/ansh-log`),
 [/ansh-verify](../ansh-verify/SKILL.md), [/lightweight-sql](../lightweight-sql/SKILL.md),
 [/chill-describe](../chill-describe/SKILL.md), [/ansh-plan](../ansh-plan/SKILL.md).
 
@@ -21,11 +21,7 @@ codebase. Model and effort come from the packet stamp, routed per runtime.md.
 
 1. **Load the packet.** A task id reads `.ansh/tasks/<id>.md`. An inline task with explicit
    done-criteria also works. Neither: return BLOCKED, "No scoped task. Run `/ansh-plan` first."
-2. **Worktree.** One worktree per work item: a sibling of `web-app`, never nested in a repo,
-   `bun install` run in it. Reuse it if it exists. Don't cut a new one per invocation: `.ansh/` is
-   git-excluded and won't be there. A task for a different work item than the current branch goes
-   to that item's own worktree, in a fresh session if you can. A read-only lookup elsewhere is fine.
-   Edits and branch work elsewhere are not.
+2. **Worktree.** Work in the item's worktree per [worktrees](../_shared/worktrees.md).
 3. **Ticket to In Progress.** If the packet has a Linear ticket section, check each of the packet's
    own tickets (not the parent). `triage`, `backlog` or `unstarted` -> In Progress (find
    `statusType="started"` with `list_issue_statuses`, then `save_issue`). Already started or later:
