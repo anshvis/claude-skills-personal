@@ -1,9 +1,12 @@
 ---
 name: lightweight-sql
-description: Make a SQL query as lightweight as possible to avoid DB load and rate limiting (esp. row-read limits and Drizzle round-trips). Use when writing/reviewing a query that runs against a shared/metered DB, when a query is slow or trips rate limits, or when the user invokes /lightweight-sql. Rewrites the query to minimize rows scanned, columns materialized, and round-trips, then explains the change.
+description: "Make a SQL query as lightweight as possible to avoid DB load and rate limiting (esp. row-read limits and Drizzle round-trips). Use when writing/reviewing a query that runs against a shared/metered DB, when a query is slow or trips rate limits, or when the user invokes /lightweight-sql. Rewrites the query to minimize rows scanned, columns materialized, and round-trips, then explains the change."
 ---
 
 # lightweight-sql
+
+**Runtime:** Read [ANSH runtime compatibility](../_shared/runtime.md) before starting.
+Use its tool, model, path and review mappings for provider-specific examples below.
 
 Rewrite a SQL (or Drizzle) query to do the least work the database can get away with, then state what changed and why. The metric that matters is usually **rows read/scanned** (what most managed-DB rate limits count), then **round-trips**, then **bytes materialized**.
 

@@ -1,173 +1,208 @@
 ---
 name: ansh-review
-description: EVALUATOR role in the Karpathy loop. Runs at Opus medium/high effort with extended thinking — a thinking role, one step below the planner and well above the cheap specialist. Scores a specialist's output against the subtask's explicit done-criteria, verifies the planner's flagged edge cases were handled, finds gaps/bugs/risks, and always pulls in CROSS-MODEL (codex) eyes for the bug hunt. This is the "second agent that evaluates against defined criteria" from the Karpathy loop — it returns structured PASS/FAIL + findings that the orchestrator (/ansh-small-loop or /ansh-loop) uses to decide revise-or-ship. Runs a cross-model codex review pass on EVERY evaluation by default (the strongest "second agent" is a different model — it catches bugs Claude is structurally blind to), with a free in-session adversarial pass alongside, and adds review-fresh (no-history parallel Claude agents) or a swarm (parallel pr-review-* reviewers with adversarial verification) on top for large diffs. Use when the user says "/ansh-review", after a /ansh-task completes, or when /ansh-small-loop or /ansh-loop reaches the evaluation step.
-allowed-tools:
-  - Bash
-  - Read
-  - Grep
-  - Glob
-  - Agent
-  - Skill
-  - Workflow
+description: "Evaluate a subtask or PR against its done-criteria and its plan (packet, linked Linear ticket and parents, TDD), sort the change into setup, logic or wiring, rate the gap between plan and code and the blast radius, and return PASS, REVISE or DEBUG plus a merge call: auto or manual-review. Plan gap and blast radius run first as a cheap triage; in PR mode a manual-review call stops there. Use after /ansh-task, inside /ansh-pr-loop's review gate, or when the user invokes /ansh-review. Prefer an independent reviewer using an available model; record actual independence and preserve stronger fresh-review gates."
 ---
 
 # /ansh-review — Evaluator
 
-The evaluator closes the Karpathy loop. It does not edit code; it judges work against the bar
-the planner set, then tells the orchestrator one of: **ship it**, **revise these specific
-things**, or **this is a bug — hand to `/ansh-debug`**.
+**Runtime:** Read [ANSH runtime compatibility](../_shared/runtime.md) before starting.
+Use its tool, model, path and review mappings for provider-specific examples below.
 
-**Effort (dial-driven — a thinking role, always one step below the planner and above the
-specialist):**
-- 🟡 Standard goal/subtask → Opus, medium effort.
-- 🔴 Deep / high-blast-radius (auth, payments, migrations, destructive) → Opus, high + extended
-  thinking. Match the depth to what the dial said about this work.
+The evaluator closes the loop. It does not edit code. It answers three questions, with evidence:
 
-Evaluation is where subtle bugs and missed edge cases get caught; it's deliberately more expensive
-than `/ansh-task` (cheap execution) or `/ansh-debug` (more procedural root-causing). Even at the
-Standard setting, **don't run review on a cheap model** — a shallow evaluator is worse than none,
-because it manufactures false confidence.
+1. **Does it work?** Done-criteria, edge cases and repo patterns.
+2. **Is it what we planned?** The gap between the plan and the code.
+3. **What breaks if it's wrong?** The blast radius, which decides whether it can merge unattended.
 
-## Phase 0 — Ground yourself in the codebase's patterns (always, before judging)
+**Triage first.** Phases 2 and 3 are cheap: they read the diff, the tickets and the TDD, not the
+code in depth. Run them before anything else. In **PR mode** (a PR number, as `/ansh-pr-loop`
+calls it), a `manual-review` call ends the review there: post the merge-call comment and return,
+skipping Phases 1 and 4. A person is going to read the PR anyway, so a deep automated pass would
+only spend effort and invite fixes to code whose direction isn't settled. In **subtask mode**
+(after `/ansh-task`), run every phase; the merge call only matters later, when the PR opens.
 
-Do not evaluate against generic taste — evaluate against **this repo's** written standards and
-prior art. Before scoring, load (skim headings, read the sections the diff touches):
+**Effort.** Use GPT-6 Astra at high effort. For auth, payments, migrations or destructive changes,
+use xhigh with extended thinking. Never review on a cheap model: a shallow review is worse than
+none, because it creates false confidence.
 
-- Root `AGENTS.md`, then the nearest nested `AGENTS.md` for the touched packages.
-- `.agents/skills/best-practices/references/` — the canonical pattern docs:
-  `services-and-layers.md` (repo/facade split), `vertical-slices.md` (slice ownership and
-  placement), `contracts-and-domain.md` (schemas, branded IDs, domain types), `errors.md`
-  (tagged errors, no silent failure), `testing-and-review.md`, `dates.md` (ZDT/temporal),
-  `repo-hygiene.md`, `migration.md`, `accessibility.md`.
-- For Effect idioms: `bunx effect-solutions show <topic>` and `submodules/effect` — never invent
-  a pattern the codebase hasn't blessed.
-- **Prior art beats doctrine:** before flagging "wrong pattern", grep for how the nearest sibling
-  slice does it (e.g. an existing Repo + Facade pair, an existing projector). A diff consistent
-  with its best-in-class neighbor is not a finding; a diff consistent with a *known-bad* neighbor
-  still is — cite the reference doc, not the neighbor.
+## Phase 0 — Ground yourself
 
-## Phase 1 — Score against done-criteria (always)
+Judge against this repo, not general taste. Read the root `AGENTS.md` and the nearest nested one,
+and the sections of `.agents/skills/best-practices/references/` that the diff touches. For Effect,
+use `bunx effect-solutions show <topic>` and `submodules/effect`. Prior art beats doctrine: before
+calling something the wrong pattern, check how the nearest good sibling slice does it. Matching a
+good neighbour is not a finding. Matching a known-bad one still is; cite the reference doc.
 
-Read the subtask's done-criteria from its packet `.ansh/tasks/<id>.md` (index: `.ansh/plan.json`),
-or the criteria you were handed.
-For each criterion, return a verdict with evidence:
+## Phase 1 — Does it work? (after triage)
+
+**Done-criteria.** Read them from `.ansh/tasks/<id>.md` (index `.ansh/plan.json`) or from what you
+were handed. Give each one a verdict with evidence. A criterion with no evidence is a FAIL.
 
 ```
 T3 "endpoint returns 422 on missing tenantId"  → PASS (ran curl, got 422 + body {error:...})
 T3 "unit test added"                            → FAIL (no test touches this path)
 ```
 
-Do not pass a criterion on vibes. If you claim "this is safe", cite the line that proves it.
-A criterion with no evidence is a FAIL.
+**Watch-outs and tests.** Every edge case in the packet's "Watch out for" must be handled, and
+every test in "Tests to write" must exist and pass. A missed one is a BLOCKER. Then look for edge
+cases the planner missed.
 
-**Layering gate — repos vs facades (when the diff adds/edits a repo, facade, service, projector,
-resolver, or business-logic function).** The load-bearing rule: **a repo is anything that touches
-the DB (Drizzle/SQL); a facade/service is where business logic lives.** They must not blur. Verify
-against `.agents/skills/best-practices/references/services-and-layers.md` (§"Repos Are Data-Oriented",
-§"Facade Responsibilities", §"Review Smells") + STYLE.md §13. Concretely:
+**Layering.** These are BLOCKERS (see `services-and-layers.md` and STYLE.md §13):
+- A repo doing more than data access: auth checks, business decisions, tagging rows with domain
+  meaning, merging across tables, opening orchestration transactions, calling another repo or a
+  facade, publishing events, or returning transport errors.
+- Database access outside a repo. Facades, services, projectors and handlers call repos.
+- A facade calling another slice's repo instead of that slice's facade.
+- An effectful repo or facade method that isn't `Effect.fn("<Tag>.<method>")`, or a service tag
+  that doesn't match its class name.
 
-- **Repos** may only: run Drizzle/SQL, find/insert/update/delete, shape query-row types, decode
-  self-owned rows, short-circuit empty inputs, translate a table-owned DB constraint into a domain
-  tagged error. Method names are data-access (`findById`, `insert`, `setActive`, …).
-- **Repos must NOT** (each is a **BLOCKER**): validate auth/permissions; make business decisions or
-  branch on user intent/loaded state; tag rows with domain meaning (`source: "rule"|"override"`);
-  merge across tables into caller-facing maps; open orchestration transactions; call a foreign repo
-  or any facade; publish events/notifications/invalidations; return transport errors.
-- **Facades/services** own the business logic: validation needing loaded data, branching/decisions,
-  typed domain errors, transaction choice (`withAuthTransaction`), cross-slice composition,
-  read→plan→update→publish, merge/plan logic (extracted to a pure helper). A facade calls its own
-  repos + sibling facades — **never a foreign slice's repo**.
-- **No DB access outside a repo:** a facade/service/projector/handler that reaches for `Drizzle`/SQL
-  directly (instead of going through a repo) is a **BLOCKER** — the write/read belongs in a repo
-  method the facade calls. (Transaction boundaries are the facade's; the queries inside are the
-  repo's.) Ingestion projectors count as orchestration: they call repos, they don't run raw SQL.
-- **Placement:** new vertical slices go in `packages/services` (repo + slice facade); extending an
-  existing `packages/database` slice is fine — a brand-new slice landing in `packages/database` is a
-  non-blocking **issue**, not a merge blocker.
+A brand-new slice in `packages/database` instead of `packages/services` is a non-blocking issue.
 
-**Naming & tracing (same gate):** service tag === class name; **every effectful repo/facade method
-is `Effect.fn("<Tag>.<method>")`** so its span is traceable; feature dir/Facade plural, domain
-models singular; files PascalCase. A method whose span name doesn't carry its service tag, a repo
-doing business logic, business logic touching the DB outside a repo, or a facade calling a foreign
-repo — each is a **BLOCKER**, not cosmetic.
+## Phase 2 — Is it what we planned? (triage)
 
-Also check the packet's **"Watch out for"** and **"Tests to write"** sections — the edge cases
-the planner identified at the top of the loop. Each should be handled in the code and, where the
-packet listed a test, that test must exist and be green. An unhandled edge case the planner called
-out is a BLOCKER, not a nit — the smart model already flagged it as load-bearing. Beyond those,
-still do your own adversarial pass for edge cases the planner may have missed.
+**Find the plan, from the closest source to the furthest:**
+1. The packet and `.ansh/plan.json` (including the PR's entry in `prs[]`).
+2. The Linear tickets the PR is linked to. Collect keys (`[A-Z]{2,5}-\d+`) from the PR title,
+   body (`Closes` / `Part of`), branch name and commit messages, then fetch each with `get_issue`.
+   Note whether the PR **closes** each one or is only **part of** it.
+3. Each ticket's parents, up to the top. List each parent's other children, so you know which
+   work belongs to a sibling ticket.
+4. The TDD. Look for a design-doc link in the PR body, the tickets or the parents. If there isn't
+   one, check the documents on the ticket's Linear project.
 
-## Phase 2 — Decide the depth of evaluation (the fresh-eyes rule)
+Missing sources are not a failure. Review against what exists and say what was missing.
 
-The Karpathy loop says the evaluator is *"a second agent, or the same agent with a different
-prompt context."* The strongest version of "a second agent" is a **different model** — a mind
-that is structurally blind to different things than Claude is. So:
+**Compare.**
+- For a ticket the PR closes, each acceptance criterion is met (cite the line or test), partial,
+  or missing. For a "part of" ticket, check only the share this PR claims.
+- The change stays inside the parent's scope. It doesn't take a sibling ticket's work or a later
+  phase's work.
+- The code matches the TDD's names, data model, interfaces, where code lives, and which phase the
+  work belongs to. Nothing it lists as out of scope is in the diff.
 
-**Codex is the default review pass on every evaluation.** Invoke **`/ansh-codex review`**,
-scoped to this subtask's diff and its done-criteria, on every `/ansh-review`, not just the big or
-risky ones. Pass the done-criteria and "Watch out for" list after `--`. The skill does the
-binary/auth check and invocation, and ends with exactly one line: `CODEX: PASS`, `CODEX: FAIL (<n> P1)`
-or `CODEX_UNAVAILABLE: <reason>`. Carry that line into your verdict unchanged. A
-cross-model fresh opinion is where the real bugs get caught — this is the whole point of the
-evaluator role. Feed Codex the subtask's done-criteria and the packet's "Watch out for" edge cases
-so it grades against the same bar you do.
+**Rate the gap:**
+- **none** — the code does what the plan says.
+- **small** — a naming difference, a missing test or a small missing case, with an obvious fix.
+- **large** — a missing core criterion, a contradiction of the TDD (schema, contract, layer or
+  approach), extra scope, or a decision the plan never made. The code and the plan disagree about
+  what to build, so a person has to choose.
 
-Run the free in-session adversarial pass alongside it (always — see below); its findings and
-Codex's findings both flow into the same Phase 3 verdict. Then layer on the heavier modes when the
-stakes justify them:
+If the code is deliberately different and better than a stale plan, that is still a large gap.
+Don't change the code. Say the plan or TDD needs updating, and leave the decision to the user.
 
-| Condition | Add this on top of the Codex pass |
-|---|---|
-| Every evaluation (default) | **`codex`** — cross-model review of the diff vs done-criteria. This is the baseline, always run. |
-| Subtask stamped `fresh_eyes: review-fresh`, OR touches auth / payments / migrations / destructive / data-loss | **`review-fresh`** — parallel Claude subagents with NO chat history. Kills tunnel-vision and confirmation bias. Requires a clean working tree (it rebases onto `main`). Runs in ADDITION to Codex, not instead of it. |
-| User asked for a swarm, OR the diff is a large structural change (new slice, consolidation merge, refactor touching >~10 files), OR a file is at risk of crossing 1k lines | **`swarm`**: parallel pr-review-* reviewers with adversarial verification (below), on top of the Codex pass |
-| Codex and your in-session read **disagree** on a finding | resolve it explicitly — re-read the cited code, and if still unresolved, escalate to `review-fresh` to break the tie. Never silently drop a Codex finding. |
+## Phase 3 — What breaks if it's wrong? (triage)
 
-If Codex is genuinely unavailable (`/ansh-codex` ends with `CODEX_UNAVAILABLE`), fall back to `review-fresh` for that evaluation and note in the verdict that
-the cross-model pass was skipped. Do not silently downgrade to in-session-only; a skipped
-cross-model pass is a concern the loop should see.
+**Sort the change into kinds.** Classify each file, then the PR as a whole.
 
-**`swarm` mode.** Runs on top of this skill's Phase 0 pattern grounding and Phase 1 layering
-gate, not instead of them. Fan out via the Workflow tool: one reviewer per dimension
-(`pr-review-code-reviewer`, `pr-review-silent-failure-hunter`, `pr-review-test-analyzer`,
-`pr-review-type-analyzer`, `pr-review-comment-analyzer`, `pr-review-simplifier`), each
-returning structured findings scoped to *this diff only*; then an adversarial verifier per
-finding that tries to REFUTE it against the actual code (default to refuted when uncertain).
-Only verified findings enter Phase 3 — unverified reviewer output is noise, not evidence.
-Merge-consolidation diffs get an extra instruction: hunt semantic merge errors in the
-conflict-resolved files (code kept from one side assuming state the other side removed,
-dead imports/state, stale comments describing removed behavior).
+| Kind | What it does | Typical blast radius |
+|---|---|---|
+| **setup** | Adds a new type, schema, table, config or dependency. Nothing calls it yet. | low |
+| **logic** | Implements a behaviour: a function, facade method, model or rule. Tests reach it; it isn't switched on yet. | medium |
+| **wiring** | Connects things: registers a layer, route, RPC, cron, flag, UI entry point or caller. This is what makes the code run in production. | high |
 
-Always run a quick in-session adversarial pass regardless of mode — think like an attacker and a
-chaos engineer for a moment: edge cases, race conditions, nil propagation, silent failure,
-resource leaks. It's free and it's where the cheap wins are.
+The PR's kind is its riskiest part. If setup and logic were done properly, a wiring PR is thin:
+imports, registrations and a flag check. Watch for these:
+- **Logic hiding in a wiring PR** (new branching, calculations, error handling): a large gap.
+  The logic belongs in its own reviewed logic PR.
+- **A PR that mixes kinds**: a small gap. Recommend splitting it, unless it's tiny.
 
-## Phase 3 — Classify findings
+**Then adjust the blast radius.** It goes **up to high** whenever the change does any of these:
+- Edits something that already exists and has callers: a shared type, contract, schema, RPC or
+  public function. That counts even when the PR is setup.
+- Changes a migration or production data, deletes anything, or does anything else destructive.
+- Touches auth, permissions, payments, payroll or pay rules, or patient data.
+- Changes what customers see or what runs on a schedule, with no flag (or with the flag on).
+- Changes CI, deploy or infrastructure config.
 
-Sort everything you found into:
-- **BLOCKER** — a done-criterion fails, or a real bug/security issue. Must be fixed before ship.
-- **BUG (needs root cause)** — behavior is wrong and the cause isn't obvious → recommend
-  `/ansh-debug` rather than a blind patch.
-- **NIT** — style/clarity; optional. If a `gold-star` reference applies, note divergence from it.
+It goes **down one level** when the new path is unreachable in production: behind a flag that
+is off by default, unregistered, or called by nothing.
 
-## Output (what the orchestrator — /ansh-small-loop or /ansh-loop — consumes)
+**Merge call.**
+- **manual-review** if any of these is true:
+  - the gap is large;
+  - the blast radius is high;
+  - the reviewers left an unresolved disagreement (only known after Phase 4).
+- **auto** otherwise. The PR may merge without a person once it is green.
 
-Return a compact verdict block:
+Dependencies don't change the call; they decide *when*. List each `Depends on #<n>` PR with its
+state. An `auto` PR whose dependency is open or in manual review is **waiting**: it can be
+reviewed, fixed and driven to green, but it doesn't merge until everything below it has.
+
+**Post the call on the PR** when one exists. If there is no PR yet, the orchestrator posts it
+when it opens the PR. Add or edit one comment starting `<!-- ansh-review:merge-call -->`. Write it
+in the PR's own voice: no AI attribution, no emoji. Shape:
+
+```markdown
+<!-- ansh-review:merge-call -->
+**Needs manual review** | **Clear to auto-merge**
+
+Kind: wiring (registers the forecast cron, adds the RPC route)
+Plan gap: large. FND-2710 says the job reads the census input interface, but the diff reads `unit_census` directly.
+Blast radius: high. The cron runs nightly for every unit, with no flag.
+Waiting on: #1234 (open) <omit the line when there are no open dependencies>
+
+What to look at: <the one or two places a reviewer should read first>
+```
+
+## Phase 4 — Independent review
+
+Send the diff, the done-criteria, the watch-outs and the plan sources to an independent reviewer,
+using the runtime guide's routing. Prefer a different model, then fresh context. Report the
+reviewer's actual provider, model and independence; a Codex process launched from Codex is not
+automatically a different model. Separately, do your own adversarial pass in this session: races,
+missing error paths, leaks and security boundaries.
+
+- **Auth, payments, migrations, destructive changes, or `fresh_eyes: review-fresh`:** add a
+  fresh-context review. Use `/review-fresh` only for a clean, committed tree. On a stacked or
+  shared branch, never rebase to fit it (see [stacking](../_shared/stacking.md)): give a
+  read-only reviewer the diff instead. If fresh context isn't available, return BLOCKED.
+- **Large structural diffs or an explicit swarm request:** run the correctness, silent-failure,
+  tests, types, comments and simplification lenses, using the `pr-review-*` agent definitions
+  where they exist. Verify each finding against the code before keeping it.
+- **Reviewers disagree:** re-read the code and settle it with evidence. Keep any disagreement you
+  can't settle in the verdict, and never drop an independent finding silently.
+
+If no delegation is available, do the in-session pass and record reduced independence as a
+concern. A required fresh-review gate stays BLOCKED.
+
+## Output
+
+Sort findings into:
+- **BLOCKER**: a criterion fails, a real bug or security issue, or a layering violation.
+- **BUG**: behaviour is wrong and the cause isn't obvious. Send it to `/ansh-debug`, not a blind
+  patch.
+- **NIT**: style or clarity, or a small plan gap. Note any divergence from a `gold-star` reference.
+
+A large plan gap is not a BLOCKER by itself, because the plan may be the thing that's wrong. It
+sets `MERGE: manual-review` and goes in the PR comment for a person to decide. A missing core
+criterion still fails Phase 1, and that failure is a BLOCKER.
 
 ```
-VERDICT: PASS | REVISE | DEBUG
+VERDICT: TRIAGED | PASS | REVISE | DEBUG
 CRITERIA: <n met> / <n total>
-MODE: codex (default) [+ in-session] [+ review-fresh] [+ swarm]   # codex always present unless it says CODEX_SKIPPED (unavailable)
+KIND: setup | logic | wiring [mixed: ...]
+PLAN_GAP: none | small | large — <one line per gap, with ticket key or TDD section>
+PLAN_SOURCES: <packet, FND-1234 (closes), parent FND-1200, TDD link | missing: ...>
+BLAST_RADIUS: low | medium | high — <why>
+DEPENDS_ON: [#<n> open | merged | manual-review]
+MERGE: auto | manual-review — <reasons>
+WAITING_ON: [#<n> ...]   # open or manual-review dependencies; merge holds until they merge
+MODE: independent [+ in-session] [+ review-fresh] [+ swarm]
+REVIEWER: <provider/model or unknown>
+INDEPENDENCE: cross-model | fresh-context | in-session
+CONCERNS: [unavailable capabilities or reduced independence]
 BLOCKERS: [ {subtask, finding, suggested fix} ... ]
 BUGS: [ {symptom, why root-cause is non-obvious} ... ]   # → /ansh-debug
 NITS: [ ... ]
 ```
 
-- **PASS** → loop may proceed to ship.
-- **REVISE** → loop feeds BLOCKERS back to `/ansh-task` (or `/ansh-plan` if architectural).
-- **DEBUG** → loop hands BUGS to `/ansh-debug` for root-cause before any fix.
+- **TRIAGED** (PR mode, `manual-review`): Phases 1 and 4 were skipped on purpose. The caller
+  hands the PR to a person and runs no further automated review or fixes on it.
+- **PASS**: the caller may ship. `MERGE` decides whether the merge waits for a person.
+- **REVISE**: the caller sends BLOCKERS back to `/ansh-task`, or to `/ansh-plan` when a fix needs
+  a decision. Never let the specialist guess its way through a plan gap.
+- **DEBUG**: the caller sends BUGS to `/ansh-debug` for a root cause before any fix.
 
 ## Completion status
 
-End with **DONE** (verdict emitted) or **BLOCKED** (couldn't evaluate — e.g. dirty tree blocked
-`review-fresh`; say what's needed).
+End with **DONE** (verdict emitted) or **BLOCKED** (couldn't evaluate; say what's needed).

@@ -1,9 +1,12 @@
 ---
 name: chill-describe
-description: Write commit messages and PR descriptions the way Ansh wants them. Commits stay short and per-change so individual changes can be reverted; PR descriptions are holistic (problem → fix → impact) in 2-3 paragraphs with bullets for enumerated items. MUST be applied before ANY `git commit`, `git commit --amend`, `gh pr create`, or `gh pr edit --body` runs — load this skill first, draft per its rules, then execute the git/gh command.
+description: "Write commit messages and PR descriptions the way Ansh wants them. Commits stay short and per-change so individual changes can be reverted; PR descriptions are holistic (problem → fix → impact) in 2-3 paragraphs with bullets for enumerated items. MUST be applied before ANY `git commit`, `git commit --amend`, `gh pr create`, or `gh pr edit --body` runs — load this skill first, draft per its rules, then execute the git/gh command."
 ---
 
 # chill-describe
+
+**Runtime:** Read [ANSH runtime compatibility](../_shared/runtime.md) before starting.
+Use its tool, model, path and review mappings for provider-specific examples below.
 
 Drafting style for commits and PR descriptions. Two different shapes — don't blur them together.
 

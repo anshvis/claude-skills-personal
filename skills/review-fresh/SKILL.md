@@ -1,9 +1,12 @@
 ---
 name: review-fresh
-description: Fresh-eyes review of the current branch's committed changes vs `main`, run by parallel subagents that have no access to this conversation's history. Rebases the branch onto `main` before reviewing — requires a clean working tree. Optionally pass a one-line description of intent as an argument.
+description: "Fresh-eyes review of the current branch's committed changes vs `main`, run by parallel subagents that have no access to this conversation's history. Rebases the branch onto `main` before reviewing — requires a clean working tree. Optionally pass a one-line description of intent as an argument."
 ---
 
 # Review Fresh
+
+**Runtime:** Read [ANSH runtime compatibility](../_shared/runtime.md) before starting.
+Use its tool, model, path and review mappings for provider-specific examples below.
 
 Run a context-free review of the current branch's **committed changes vs `main`** by delegating to parallel subagents. Subagents only see the prompt you hand them, so the review is not biased by anything in this conversation.
 
@@ -15,7 +18,7 @@ Run a context-free review of the current branch's **committed changes vs `main`*
 
 1. **Capture diff, SHA, and intent.**
 
-   Run a single Bash call from the repo root: `~/.claude/skills/review-fresh/capture.sh`
+   Run a single Bash call from the repo root: `<this skill directory>/capture.sh`
 
    The script:
    - Refuses to run if the working tree is dirty, you're on `main` itself, or you're on detached HEAD — and prints exactly what to fix on stderr.
@@ -32,11 +35,14 @@ Run a context-free review of the current branch's **committed changes vs `main`*
 
    Parse those three values. **If the script exits non-zero, surface its stderr verbatim to the user** — it spells out exactly what they need to do (commit changes, switch branches, resolve conflicts) and stop. Do not try to fix the underlying state yourself. If `BYTES=0`, tell the user the branch has no commits beyond `main`, so there's nothing to review.
 
-   Wrapping the capture in one script keeps the permission allowlist down to a single entry (`Bash(~/.claude/skills/review-fresh/capture.sh *)`).
+   Wrapping the capture in one script keeps the permission allowlist down to a single entry (the resolved capture-script path).
 
    **Intent line.** If the user passed an argument to `/review-fresh`, capture it verbatim as the **intent line** — a short claim of what this change is meant to do. If no argument was passed, set intent to `(none provided)`. Do **not** infer intent from this conversation; that leaks exactly the bias a fresh-eyes review is meant to avoid.
 
-2. **Launch three reviewers in parallel** — a single message with three `Agent` tool calls (`subagent_type: "general-purpose"`). Each prompt must be fully self-contained — no references to "the conversation" or "what we discussed".
+2. **Require fresh-context delegation.** If the host cannot create fresh-context reviewers,
+   report BLOCKED; an in-session pass does not satisfy this skill.
+
+   **Launch three reviewers in parallel** — the host's fresh-context delegation capability (Claude `Agent` when exposed); run serially if concurrency is unavailable. Each prompt must be fully self-contained — no references to "the conversation" or "what we discussed".
 
    Pass each agent:
    - Absolute path to the diff file. Use it as a **change map**, not the only input — read full files, follow callers, and check related types/tests when it sharpens reasoning about the diff. Three lines of hunk context is rarely enough.

@@ -1,9 +1,12 @@
 ---
 name: linear-sync
-description: Reconcile Linear with the real state of the current Claude Code session so the global context stays accurate. Detects the active ticket(s) from the git branch (e.g. `rev-644-...` → REV-644) and its project/parent/siblings, compares Linear's recorded state (status, description, checklist, relations, PR links) against what has actually happened in this chat (branch, commits, PRs, decisions made, scope changes, completed plan items), proposes a sync plan, and — after a confirm gate for any outward-facing edit — applies status transitions, decision comments, description/checklist updates, and PR/relation links. Invoke when the user says "sync linear", "/linear-sync", "update the tickets", "make sure linear is up to date", or after a working session that changed scope, made decisions, or moved work forward.
+description: "Reconcile Linear with the real state of the current coding-agent session so the global context stays accurate. Detects the active ticket(s) from the git branch (e.g. `rev-644-...` → REV-644) and its project/parent/siblings, compares Linear's recorded state (status, description, checklist, relations, PR links) against what has actually happened in this chat (branch, commits, PRs, decisions made, scope changes, completed plan items), proposes a sync plan, and — after a confirm gate for any outward-facing edit — applies status transitions, decision comments, description/checklist updates, and PR/relation links. Invoke when the user says \"sync linear\", \"/linear-sync\", \"update the tickets\", \"make sure linear is up to date\", or after a working session that changed scope, made decisions, or moved work forward."
 ---
 
 # linear-sync
+
+**Runtime:** Read [ANSH runtime compatibility](../_shared/runtime.md) before starting.
+Use its tool, model, path and review mappings for provider-specific examples below.
 
 Keep Linear honest about what this session actually did. The failure mode this prevents: a ticket sitting in `Backlog` with a stale description while the branch already has commits, a PR, and three design decisions that live only in the chat. After this skill runs, someone opening the ticket should see the same reality you see.
 
@@ -12,7 +15,7 @@ This skill **writes to Linear**, which is outward-facing. Comments are append-on
 ## Step 1 — Identify the work in scope
 
 1. Get the current branch: `git branch --show-current`. Extract the ticket id from the prefix (`rev-644-...` → `REV-644`, `roi-1595-...` → `ROI-1595`). If the branch has no ticket prefix, ask the user which ticket(s) to sync.
-2. `mcp__claude_ai_Linear__get_issue` for that id with `includeRelations: true`. Note its `parentId` and `projectId`.
+2. Linear capability `get_issue` for that id with `includeRelations: true`. Note its `parentId` and `projectId`.
 3. If it has a parent (epic), fetch the parent too, and `list_issues` filtered to the same `project` to pull sibling subtasks — the session may have touched more than one (e.g. a stacked PR series). Build the **candidate set** of issues to reconcile.
 4. Gather session ground truth — do NOT ask the user to retype any of it:
    - Branch + its commits vs. the base branch: `git log --oneline <base>..<branch>` (base is usually `main` or the parent ticket's branch for a stacked PR).
@@ -27,7 +30,12 @@ For each candidate issue, diff Linear's recorded state against session reality a
 - **Status drift** — work started/PR opened but issue is `Backlog`/`Todo`; or work merged but issue not `Done`. Map to the team's real workflow states (fetch via `get_team` / the issue's `statusType` if unsure of names).
 - **Description / scope drift** — a decision in chat contradicts, narrows, or extends the ticket body (e.g. "we chose `gist(badge, timeRange)` over a plain GiST", "deferred profileId to the downstream feature"). Note the exact lines that are now wrong or missing.
 - **Checklist drift** — plan checkboxes that are now complete.
-- **Link drift** — a PR exists but isn't attached to the **parent**; a `relatedTo`/`blockedBy` relation discovered in chat isn't recorded; a stacked-PR base isn't reflected. Also treat **a PR attached to a child ticket as drift**: PR links belong on the parent (see Step 4), so flag it to re-attach on the parent and detach from the child.
+- **Link drift** — any of these:
+  - A PR isn't attached to a ticket its own diff advances.
+  - A section PR is attached to the **parent/epic**, which usually happens through a parent-named branch. Flag it to detach from the parent and attach to the right child.
+  - A chain PR is attached to tickets that only reach it through a merged dependency branch.
+  - A `relatedTo`/`blockedBy` relation discovered in chat isn't recorded, or one has gone stale (the blocking work already merged).
+  - A stacked-PR base isn't reflected.
 - **Decision log** — material decisions with no home in Linear (these become comments, never silent description rewrites).
 
 If nothing drifted, say so in one line and stop — don't manufacture busywork.
@@ -41,12 +49,12 @@ REV-644
   status:  Backlog → In Progress        (branch has commits + draft PR #11409)
   comment: + decision log (gist(badge,timeRange) chosen; profileId deferred)
   body:    update "Open (reviewer)" line to record the GiST-scope decision
-  links:   attach PR #11412 (base: rev-611, stacked) — on the PARENT
+  links:   attach PR #11412 (Part of REV-644; depends on #11409), on REV-644 itself
 ```
 
-PR links always land on the **parent/epic**, never on a child. Children scope and sequence the work;
-attaching each section PR to its own child crowds the board and splits the stack's lineage. One
-parent holding the whole ordered PR series is the goal.
+PR links land on **each ticket the PR's own diff advances**, so the board answers "which PR is this
+ticket's?" per ticket, even in a chain. The parent/epic gets only the umbrella PR, or a PR that is its
+own work; it sees the rest through its sub-issues. This mirrors the `/ansh-small-loop` linking rule.
 
 Then **confirm before any outward-facing write** using `AskUserQuestion`:
 - Comments (append-only): safe to apply on confirm.
@@ -59,8 +67,8 @@ Respect the user's saved preferences: no emojis, no AI-author trailers, no "as d
 
 In dependency order (parent before children when statuses cascade):
 
-- Status: `mcp__claude_ai_Linear__save_issue` with the new `stateId`/state.
-- Decision comment: `mcp__claude_ai_Linear__save_comment` — a tight bullet list of decisions, each with its *why*, plus a link to the PR/branch. This is the durable record; favor it over rewriting the description.
+- Status: Linear capability `save_issue` with the new `stateId`/state.
+- Decision comment: Linear capability `save_comment` — a tight bullet list of decisions, each with its *why*, plus a link to the PR/branch. This is the durable record; favor it over rewriting the description.
 - Description/checklist edits: `save_issue` with the updated `description` (markdown, real newlines). Edit surgically — preserve the existing structure, flip checkboxes, append a short "Decisions" note rather than rewriting prose, unless the user asked for a fuller rewrite.
 - PR attachment / relations: attach the PR **to the parent/epic** via `create_attachment`, and set
   `relatedTo`/`blockedBy`/parent as discovered. **Never attach a PR to a child ticket** — every PR in

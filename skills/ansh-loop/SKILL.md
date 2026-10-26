@@ -1,35 +1,22 @@
 ---
 name: ansh-loop
-description: ORCHESTRATOR for PROJECT-SCALE work in the Karpathy loop — spans a Linear project or multiple parent/epic tickets, needs a product/architecture judgment call, or is genuinely multi-week. Runs strictly AFTER /ansh-plan has produced a plan carrying guardrails, acceptance_criteria, and exit_criteria (refuses and kicks back to /ansh-plan if any are missing). Requires Ansh to explicitly walk through and sign off on those guardrails/acceptance/exit criteria via a hard AskUserQuestion STOP before any execution starts. Executes via dynamic Workflows (the Workflow tool) — fanning out sections/subtasks through pipeline()/parallel() rather than a serial walk — then still routes through /ansh-review (evaluator), /ansh-debug (bug loop), and /ansh-resolve (outer loop). A small, single-ticket goal gets redirected to /ansh-small-loop instead of run here. Use when the user says "/ansh-loop" on a project/initiative, or after /ansh-plan reports DONE for a project-scale goal. Do NOT use for a single scoped ticket — that's /ansh-small-loop.
-allowed-tools:
-  - Bash
-  - Read
-  - Edit
-  - Write
-  - Grep
-  - Glob
-  - AskUserQuestion
-  - Agent
-  - Skill
-  - Workflow
-  - mcp__claude_ai_Linear__get_issue
-  - mcp__claude_ai_Linear__list_comments
-  - mcp__claude_ai_Linear__save_comment
-  - mcp__claude_ai_Linear__save_issue
+description: "Orchestrate project-scale work from an approved ANSH plan using available delegation or serial execution. Require human sign-off on guardrails, acceptance and exit criteria; preserve specialist, review, debug and resolve gates. Use /ansh-loop for projects or multiple parent tickets; use /ansh-small-loop for one scoped ticket."
 ---
 
 # /ansh-loop — Orchestrator (project scale)
 
+**Runtime:** Read [ANSH runtime compatibility](../_shared/runtime.md) before starting.
+Use its tool, model, path and review mappings for provider-specific examples below.
+
 The conductor for work too big to hand a single specialist chain: a project, an initiative, or a
 goal spanning multiple parent/epic tickets. It does not plan, code, or review directly — it reads
 an already-approved plan, gets an explicit human sign-off on that plan's guardrails and
-acceptance/exit criteria, then drives execution as **dynamic Workflows** so sections run with real
-concurrency instead of one subtask at a time. Keep this skill thin on role logic (that still lives
+acceptance/exit criteria, then drives execution through the **available orchestration backend**, preserving dependencies and human checkpoints. Keep this skill thin on role logic (that still lives
 in `/ansh-plan`, `/ansh-task`, `/ansh-review`, `/ansh-debug`, `/ansh-resolve`) — its own value is
-the criteria gate and the Workflow-based fan-out.
+the criteria gate and dependency-aware execution.
 
 ```
-inverse gate → REQUIRE plan.json → CRITERIA STOP (human) → WORKFLOW FAN-OUT ─┬─ PASS ──► SHIP ─► RESOLVE
+inverse gate → REQUIRE plan.json → CRITERIA STOP (human) → WORKFLOW FAN-OUT ─┬─ PASS ──► SHIP ─► PR-LOOP
                                                           per section:       │
                                                           TASK ─► REVIEW ────┼─ REVISE ─┐
                                                                              │          │
@@ -41,8 +28,8 @@ inverse gate → REQUIRE plan.json → CRITERIA STOP (human) → WORKFLOW FAN-OU
 
 Everything `/ansh-small-loop` enforces still applies here — worktree/session discipline,
 `/chill-describe`, the integration-branch + small-section-PR topology, the per-subtask small-commit
-discipline, the commit review gate in allow-edits mode, never pushing to `main`/`master`, parent-vs-child
-ticket/PR linking, `.ansh/` local-exclude hygiene, and loop termination. Read `/ansh-small-loop`'s
+discipline, the commit review gate in allow-edits mode, never pushing to `main`/`master`, per-ticket
+PR linking (each PR links every ticket its own diff advances), `.ansh/` local-exclude hygiene, and loop termination. Read `/ansh-small-loop`'s
 "Hard rules" section — it is not repeated verbatim here to avoid drift between two copies; treat it
 as inherited. Two rules are **specific to this loop**:
 
@@ -100,10 +87,13 @@ any of the three lists, that's a plan edit: either patch `.ansh/plan.json`/`plan
 a trivial wording fix, or route back to `/ansh-plan` if it changes decomposition. Only once all
 three are explicitly confirmed does execution begin.
 
-## Step 2 — Fan out execution via dynamic Workflows
+## Step 2 — Execute through the available orchestration backend
 
-Unlike `/ansh-small-loop`'s serial subtask walk, this loop drives execution with the `Workflow`
-tool so independent sections/subtasks actually run concurrently. Mechanics that matter:
+Use the runtime guide's orchestration mapping. When Workflow is absent, dispatch ready
+packets with host-native delegation; when delegation is absent, run roles serially. Report
+that fallback and preserve every gate, dependency and exit condition. The details below
+apply only to the Workflow backend; do not call nonexistent APIs. Pause after each specialist
+for its manual human diff review before scheduling automated evaluation.
 
 - **Enumerate first, in plain tool calls — not inside the script.** Workflow scripts have no
   filesystem access. Before calling `Workflow`, read `.ansh/plan.json` and list `.ansh/tasks/*.md`
@@ -127,9 +117,10 @@ tool so independent sections/subtasks actually run concurrently. Mechanics that 
   sequentially with its dependency (the ordinary `await agent()`/`pipeline()` sequencing already
   guarantees single-writer-at-a-time, so no isolation is needed for conflict-safety there either).
   If a wave boundary forces a dependency across two separate `Workflow` calls, the orchestrator
-  (this conversation, not the script) must manually reconcile state between them — e.g. copy the
-  upstream stage's actual changed files into the shared working directory before the next `Workflow`
-  call — since the script itself cannot do this.
+  (this conversation, not the script) must reconcile state between them, since the script itself
+  cannot. Do it through git, not by copying files: commit and push the upstream section's branch,
+  then have the dependent section start from it per [stacking](../_shared/stacking.md) (fetch, cut
+  from `origin/<dependency-branch>`, confirm the dependency's code is present).
 - **Each subtask's execution + evaluation is one pipeline, not a barrier.** Model per subtask as:
   `agent()` running `/ansh-task <id>` → `agent()` running `/ansh-review` for that subtask → branch
   on verdict. Use `pipeline()` across subtasks in a section so review of subtask N overlaps
@@ -150,20 +141,53 @@ tool so independent sections/subtasks actually run concurrently. Mechanics that 
 
 Once every section's subtasks PASS, run one evaluation against `acceptance_criteria[]` (not just
 per-subtask done-criteria) — this is the landing gate, and it checks the criteria confirmed in
-Step 1, not a paraphrase of them. Run it as `/ansh-review` with the cross-model Codex pass; if the
+Step 1, not a paraphrase of them. Run it as `/ansh-review` with the cross-model independent pass; if the
 goal touches auth/payments/migrations/destructive surface, add `review-fresh` on top.
 
 ## Step 4 — SHIP (integration branch + small section PRs)
 
+Every branch and PR follows [stacking](../_shared/stacking.md):
+- Base each one on the dependency's branch while that PR is open, otherwise on the integration
+  branch.
+- Fetch before cutting, and merge the base in before every push.
+- Never rebase or force-push.
+
 Same topology as `/ansh-small-loop`'s Step 4 — integration branch, small section PRs merging into
-it in dependency order, umbrella PR to `main` last, `/chill-describe` on every commit/PR, parent
-ticket linked in magic-word position only. At project scale, sections map 1:1 to `plan.json.prs[]`
+it in dependency order, umbrella PR to `main` last, `/chill-describe` on every commit/PR. Each section PR
+links its own tickets (`Closes` / `Part of` per `plan.json.prs[].links`), and only the umbrella links the
+parent. After each Workflow wave, the orchestrator checks that every linked ticket shows its PR, and that
+the parent didn't pick up section PRs. At project scale, sections map 1:1 to `plan.json.prs[]`
 entries and there will typically be more of them; open/merge them small-first exactly as before.
 
-## Step 5 — RESOLVE (outer loop)
+## Step 5 — Drive each PR to merge with `/ansh-pr-loop`
 
-Invoke `/ansh-resolve` after the PR(s) are up, same as `/ansh-small-loop`. At project scale this
-may run once per section PR as it lands, plus once for the umbrella.
+Right after each section PR opens, run `/ansh-pr-loop <n> via=ansh-loop` on it (the `via` tag
+feeds its outcome ledger). Don't wait for the rest of the
+wave. Its review gate starts with `/ansh-review`'s triage, which sorts the PR into setup, logic or
+wiring, rates the plan gap and the blast radius, and makes the merge call before any other review
+runs:
+- **`auto`, and every dependency merged** → `/ansh-pr-loop` drives the PR to green and
+  squash-merges it into the integration branch. Then retarget and merge up the PRs stacked on it
+  (stacking, "When a dependency merges"), and their loops carry on.
+- **`manual-review`** (a large plan gap or a high blast radius) → `/ansh-pr-loop` posts the
+  merge-call comment saying it needs manual review and stops at once: no further reviews, fixes or
+  CI babysitting on that PR. Record it in `.ansh/plan.json` (`prs[].merge_call`). Re-run
+  `/ansh-pr-loop <n>` once the user has looked (or said go ahead). Review comments the user left
+  on the PR count as that look. From then on the agent owns the rest: it answers every comment,
+  makes the changes (deciding direction questions itself and explaining the call on the PR), and
+  merges when green, without asking again.
+- **A dependency is still open or waiting for manual review** → don't merge, even when the call is
+  `auto`. Keep building and reviewing the dependent sections on top (stacked), drive them to
+  green, and post the `waiting-on` comment on each. They merge automatically, with no review
+  request of their own, once the PR below them merges.
+
+**The umbrella PR to `main`** runs `/ansh-pr-loop <n> merge=ask`. It is the whole project landing on
+`main`, so a person always says yes to it.
+
+**Between waves, report the merge state.** List each PR as merged, waiting on #<n>, or needs
+manual review, with the reason. A PR left for manual review isn't an exit criterion by itself.
+Keep working on everything that doesn't depend on it. Stop and report only when nothing else can
+move without the user.
 
 ## Glue (called by name, never forked)
 
@@ -180,13 +204,15 @@ stamp.
 
 ## Termination & completion
 
-The loop ends when `acceptance_criteria[]` is met and `/ansh-resolve` shows checks green + review
+The loop ends when `acceptance_criteria[]` is met and each PR's `/ansh-pr-loop` shows checks green + review
 settled, OR when any `exit_criteria[]` condition trips (then STOP and report — don't spin). End
 with:
 - **DONE** — shipped, acceptance criteria met, checks green, review settled, Linear linked.
 - **DONE_WITH_CONCERNS** — shipped but open items remain (list them against acceptance criteria).
+- **AWAITING_REVIEW** — everything that could merge has merged. The rest is waiting on manual
+  review: list each PR, its kind, why it was called, and what depends on it.
 - **BLOCKED** — could not proceed (what was tried, which guardrail or exit criterion stopped it).
 - **NEEDS_CONTEXT** — missing a user decision (state exactly what).
 
-Close with a short summary: what shipped (PR URLs), which exit criterion ended the loop if it
+Close with a short summary: what shipped (PR URLs), what is waiting for manual review and why, which exit criterion ended the loop if it
 wasn't full completion, and anything left open. Don't re-narrate the whole run.

@@ -1,24 +1,17 @@
 ---
 name: ansh-task
-description: SPECIALIST role in the Karpathy loop. Executes exactly ONE small, scoped subtask — the kind /ansh-plan stamps as Quick or Standard — on a cheap model (Sonnet, low/medium effort) by reading its self-contained packet at .ansh/tasks/<id>.md. Runs a conviction gate first: if the packet doesn't give high confidence it can solve the subtask, it does NOT start — it writes the gap to .ansh/discoveries.md and kicks back to /ansh-plan. NEVER changes direction itself (direction is owned by /ansh-plan or the human). Implements, self-verifies against done-criteria, stops. No clarifying-question phase, no browser QA, no triple review, no Linear dance. Use when the user says "/ansh-task <id>", or when /ansh-small-loop or /ansh-loop dispatches a single subtask.
-allowed-tools:
-  - Bash
-  - Read
-  - Edit
-  - Write
-  - Grep
-  - Glob
-  - Skill
-  - mcp__claude_ai_Linear__get_issue
-  - mcp__claude_ai_Linear__list_issue_statuses
-  - mcp__claude_ai_Linear__save_issue
+description: "Execute one scoped task packet from .ansh/tasks/ by task ID using quality-first OpenAI model routing. Check conviction, implement and verify explicit criteria, then pause for human diff review. Report NEEDS_REPLAN for missing scope or decisions. Use /ansh-task with a task ID or an explicit single-task request; planning and shipping belong to the caller."
 ---
 
 # /ansh-task — Specialist
 
-One scoped subtask. In, implement, self-check, out. This is the cheap workhorse of the loop —
-keep it cheap. Run on **Sonnet at low/medium effort**. The expensive thinking already happened
-in `/ansh-plan`; your job is faithful execution, not redesign.
+**Runtime:** Read [ANSH runtime compatibility](../_shared/runtime.md) before starting.
+Use its tool, model, path and review mappings for provider-specific examples below.
+
+One scoped subtask. Implement, self-check, then hand back. Default to **GPT-6.1 Sol at
+high effort**; use **GPT-6 Astra** as soon as the work needs stronger reasoning. Follow the
+shared runtime routing rather than treating a cheap-model packet stamp as a capability cap.
+The plan owns direction; a stronger model still executes the same agreed scope.
 
 ## Hard rule — the plan docs are the only source of truth; default to the human on anything outside them
 
@@ -54,16 +47,32 @@ unrelated file is fine; edits/branch work are not.
 
 ## Step 0a — Move the ticket to In Progress (if the packet names one)
 
-If the packet has a **Linear ticket** section, before implementing: take the **link ticket (parent)**
-— not the scope/child ticket — check its status and, if it's `triage`/`backlog`/`unstarted`, move it
-to **In Progress** (find `statusType="started"` via `list_issue_statuses`, then `save_issue`). If it's
-already In Progress (or later), leave it. Never set `In Review`/`Done` — the GitHub integration owns
-those. On any Linear failure, note it and keep going — don't block execution on a status flip.
-(No ticket section → skip this step.)
+If the packet has a **Linear ticket** section, before implementing: take **the packet's ticket(s)**
+(the ones this subtask advances, not the parent), and check each status. If one is
+`triage`/`backlog`/`unstarted`, move it to **In Progress** (find `statusType="started"` via
+`list_issue_statuses`, then `save_issue`). If it's already In Progress or later, leave it. Never set
+`In Review`/`Done`; the GitHub integration owns those. On any Linear failure, note it and keep
+going. Don't block execution on a status flip. (No ticket section → skip this step.)
 
-When you open or update a PR: magic-word **only the parent** ("Closes <PARENT>"), name the branch off
-the parent (`<parent-tag-lower>-<section-slug>`), and mention the child as plain-text scope only.
-Never attach a PR to a child ticket.
+When you open or update a PR, link **every ticket this PR's own diff advances**:
+- `Closes <ID>` for one it finishes.
+- `Part of <ID>` for one it advances.
+
+Never link the tickets of dependency branches merged under it; write `Depends on #<n>` for those
+instead. The parent is plain text only. Name the branch off the PR's primary ticket. After opening,
+confirm each linked ticket shows the PR.
+
+## Step 0b — Start from the right, current base (before touching code)
+
+Follow [stacking](../_shared/stacking.md), "Before starting work". In short:
+1. `git fetch origin`.
+2. Take the base from `plan.json.prs[].base`: the dependency's branch while its PR is open,
+   otherwise the integration branch.
+3. Cut new branches from `origin/<base>`. For an existing branch, merge `origin/<base>` in first.
+4. Confirm the dependency's code is actually there.
+
+Merge, never rebase or force-push. A packet whose dependency code is missing, or whose base the
+plan doesn't name, is **BLOCKED**. Don't rebuild the missing piece.
 
 ## Step 0 — Conviction gate (run BEFORE touching code)
 
@@ -89,6 +98,11 @@ prevent.
 4. **If the diff includes SQL / Drizzle**, load `/lightweight-sql` and apply it before finishing.
 5. **Report.** Per criterion: met / not met, with evidence (command + result). Prefer leaving the
    commit to the orchestrator; if you do commit, draft with `/chill-describe`.
+6. **Before any push or PR,** run [stacking](../_shared/stacking.md)'s "Before pushing or opening a
+   PR" checks:
+   - Merge the latest `origin/<base>` in, then re-verify.
+   - `git log origin/<base>..HEAD` shows only this section's commits.
+   - Open the PR with `--base <base>` and add `Depends on #<n>` for each open dependency.
 
 ## Manual review gate — open the diff for human eyes BEFORE any automated review
 

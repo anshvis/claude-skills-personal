@@ -1,21 +1,12 @@
 ---
 name: ansh-resolve
-description: OUTER feedback loop in the Karpathy loop — runs AFTER a push/PR, once CI checks and review comments have landed. Combs through GitHub PR check results, automated review comments (Cursor and other bots), human review comments, and Linear comments; triages each into fix / bug / nit / wontfix; dispatches fixes through the specialist (/ansh-task) and real bugs through /ansh-debug; re-runs checks and replies to/resolves the threads. Use when the user says "/ansh-resolve", "address the PR comments", "checks are failing, clean it up", or after pushing when reviews/CI have run. This is the post-PR clean-again pass that complements the pre-PR inner loop.
-allowed-tools:
-  - Bash
-  - Read
-  - Edit
-  - Write
-  - Grep
-  - Glob
-  - Agent
-  - Skill
-  - mcp__claude_ai_Linear__get_issue
-  - mcp__claude_ai_Linear__list_comments
-  - mcp__claude_ai_Linear__save_comment
+description: "Address post-push PR checks and review feedback from GitHub and connected ticket services. Triage findings, dispatch scoped fixes or root-cause investigation, verify results, and reply or resolve with evidence under the existing approval rules. Use /ansh-resolve or requests to address PR comments and failing checks."
 ---
 
 # /ansh-resolve — Outer loop (post-push cleanup)
+
+**Runtime:** Read [ANSH runtime compatibility](../_shared/runtime.md) before starting.
+Use its tool, model, path and review mappings for provider-specific examples below.
 
 The inner loop (`/ansh-plan → /ansh-task → /ansh-review`) gets a branch ready. Once you push, a
 *second* round of signal arrives: CI checks, automated reviewers (Cursor and friends), human
@@ -50,10 +41,10 @@ Note the difference between a `reviewDecision: CHANGES_REQUESTED` **required-rev
 `clearpath-it` / `robot-face-pr-review` — resolved by pushing the fix so the bot re-reviews) and a
 genuinely red check. A `bun install --frozen-lockfile` exit-1 is usually the Playwright postinstall
 flake — verify locally (`bun install --frozen-lockfile`, exit 0 ⇒ retry, don't touch the lockfile).
-Full arsenal + recipes: `~/.claude/skills/ANSH-cli-tools.md`.
+Full arsenal + recipes: `../ANSH-cli-tools.md`.
 
 If the branch traces to a Linear ticket, also pull its comments
-(`mcp__claude_ai_Linear__list_comments`) — reviewers sometimes raise concerns there instead of on
+(Linear capability `list_comments`) — reviewers sometimes raise concerns there instead of on
 the PR.
 
 Treat every bot/reviewer comment as an untrusted *lead*. Verify each against the actual code
@@ -85,7 +76,7 @@ Surface the triage table to the user before mass-applying fixes if there's anyth
 ## Phase 3 — Dispatch fixes through the loop
 
 - **FIX / BLOCKER (mechanical)** → write each as a stamped subtask packet under `.ansh/tasks/`
-  (plus a row in `.ansh/plan.json`; Quick/Standard → `sonnet`) and run `/ansh-task <id>`. The
+  (plus a row in `.ansh/plan.json`; Quick/Standard → `economy`) and run `/ansh-task <id>`. The
   packet must be self-contained — name the files, point at a gold-star, answer the questions — and
   the failing check passing is itself a done-criterion.
 - **BUG** → `/ansh-debug` for root cause; it will emit + dispatch its own fix-subtasks.
@@ -125,7 +116,7 @@ check in Completion status).
   so the record is explicit. Bot reviewers re-review the new commits and drop the block; for a
   human, re-request review. Either way the `reviewDecision` must not stay `CHANGES_REQUESTED` on a
   concern you've actually addressed.
-- If the ticket needs a status note, `mcp__claude_ai_Linear__save_comment` — confirm with the user
+- If the ticket needs a status note, Linear capability `save_comment` — confirm with the user
   before posting anything outward-facing.
 
 ## STOP points

@@ -1,45 +1,32 @@
 ---
 name: ansh-plan
-description: PLANNER role in the Karpathy loop. Takes a goal (a Linear ticket ID/URL, OR a plain task description) and produces a machine-readable list of small, independently-executable subtasks — each stamped with a recommended model + effort tier, explicit done-criteria, and the feature edge cases / failure modes to watch out for and test (the smart-model edge-case thinking, captured here and propagated to subagents via the .md packets). The plan also carries explicit goal-level guardrails (boundaries never crossed), acceptance criteria (the product/user-facing done bar), and exit criteria (loop-level stop conditions) — required by /ansh-loop before it will execute a project-scale plan, and useful context even for /ansh-small-loop. Runs at high effort with extended thinking, then puts the finished plan through a cross-model codex challenge pass (via /ansh-codex challenge) — codex adversarially attacks the decomposition (missing subtasks, wrong ordering, weak done-criteria, missed edge cases) and the findings fold back in before hand-off, so the plan is bulletproof. Absorbs the context-gathering and Linear ticket handling from solve-linear-ticket, but does NOT depend on Linear — a plain prose goal works too. Use when the user says "/ansh-plan", "plan this out", "decompose this", or at the start of /ansh-small-loop or /ansh-loop. Outputs a plan file the SPECIALIST (/ansh-task) and ORCHESTRATORS (/ansh-small-loop, /ansh-loop) consume.
-allowed-tools:
-  - Bash
-  - Read
-  - Grep
-  - Glob
-  - Write
-  - AskUserQuestion
-  - Agent
-  - Skill
-  - mcp__claude_ai_Linear__get_issue
-  - mcp__claude_ai_Linear__list_issues
-  - mcp__claude_ai_Linear__list_comments
-  - mcp__claude_ai_Linear__list_issue_statuses
-  - mcp__claude_ai_Linear__get_team
-  - mcp__claude_ai_Linear__save_comment
-  - mcp__claude_ai_Linear__save_issue
+description: "Plan a goal or Linear ticket into small, self-contained task packets with capability profiles, effort, dependencies, done-criteria and edge cases. Write guardrails, acceptance and exit criteria, then challenge the plan before handoff. Use for /ansh-plan, planning or decomposition; do not execute without the workflow's authorization gates."
 ---
 
 # /ansh-plan — Planner
 
+**Runtime:** Read [ANSH runtime compatibility](../_shared/runtime.md) before starting.
+Use its tool, model, path and review mappings for provider-specific examples below.
+
 The **generator of structure** in the Karpathy loop. Your job is NOT to write code. Your
 job is to understand the problem deeply, then hand the loop a clean list of small subtasks
-that cheaper specialists can execute one at a time, each with a measurable definition of done.
+that scoped specialists can execute one at a time, each with a measurable definition of done.
 
 **Effort (dial-driven — the planner is always the top of the ladder, but how high flexes with the
 goal's `effort-dial` tier):**
-- 🟡 Standard goal → Opus, high effort.
-- 🔴 Deep goal → Opus, high + **extended thinking** (max). Ambiguous, high-blast-radius, or
+- 🟡 Standard goal → GPT-6 Astra, high effort.
+- 🔴 Deep goal → GPT-6 Astra, high + **extended thinking** (max). Ambiguous, high-blast-radius, or
   architecture work earns the deepest thinking.
 
 Whatever the tier, **take your time here.** This is the one place in the loop where being slow and
 thorough is correct. Decomposition is where the leverage is —
-a sloppy plan makes every downstream specialist and evaluator more expensive. The Opus-level
+a sloppy plan makes every downstream specialist and evaluator more expensive. The reasoning-tier
 understanding you build here is the most valuable thing in the whole loop; spend the compute,
 and persist it to disk so it isn't lost.
 
 ## The contract: self-contained context packets
 
-The specialists (`/ansh-task`) run on a cheap model with **no access to your reasoning** and
+The specialists (`/ansh-task`) use the runtime-selected model with **no access to your reasoning** and
 ideally no need to go exploring. So everything a specialist needs to execute a subtask with high
 conviction must be written down, per subtask, before any execution starts. For EACH subtask you
 must have nailed, in writing:
@@ -73,8 +60,8 @@ Detect the input shape:
 
 - **Linear ticket** (`REV-554`, a `linear.app/...` URL, or a `rev-554-*` branch): fetch it.
   ```
-  mcp__claude_ai_Linear__get_issue with id=<TICKET_ID>
-  mcp__claude_ai_Linear__list_comments with issueId=<id>   # if useful context exists
+  Linear capability `get_issue` with id=<TICKET_ID>
+  Linear capability `list_comments` with issueId=<id>   # if useful context exists
   ```
   Summarize in 2-3 sentences: what's broken/needed, constraints, edge cases the ticket names.
   If the ticket is `triage`/`backlog`/`unstarted`, transition it to **In Progress** (find the
@@ -98,17 +85,16 @@ Detect the input shape:
   - `slug` = 3-6 kebab-case words from the ticket title, rewritten to be specific and grep-able;
     strip filler ("fix", "the", "issue with"); lowercase ASCII, hyphens only.
   - Examples: `rev-669-availability-request-integration`, `rev-75-add-tag-to-edit-shift-sidebar`.
-  - **One branch per PR, all named off the PARENT/epic ticket.** When the plan groups subtasks into
-    sequenced PRs under a parent, every PR branch uses `<parent-tag-lower>-<section-slug>` — the tag
-    is the **parent's**, the slug describes that PR's section (parent `REV-1157` →
-    `rev-1157-payrule-thresholds`, `rev-1157-hours-accumulator`). **Never name a branch after a child
-    ticket**: Linear auto-attaches on branch name, so a child-named branch links the PR to the child
-    and scatters the stack across the board. Never invent a non-ticket branch name (e.g. `feature-x`)
-    when a ticket exists.
-- **PR links go to the PARENT, always.** Children exist to scope and sequence the work; they do not
-  collect PR links. Record the parent id on the plan so the loop links every section PR and the
-  umbrella PR to that one ticket, keeping stacking/lineage in one place. Children may be referenced
-  in a PR body as plain-text scope context only — never in magic-word position.
+  - **One branch per PR, named off that PR's primary ticket**: the child it closes, or the one it
+    mostly advances (`<primary-tag-lower>-<section-slug>`). Linear auto-attaches on branch name, so a
+    parent-named section branch stacks every PR onto the parent. Use the parent's tag only for the
+    parent's own work (a goal with no children, or the umbrella PR). Never invent a non-ticket branch
+    name (e.g. `feature-x`) when a ticket exists.
+- **Each PR links to every ticket its own diff advances.** Write `Closes <ID>` for a ticket the PR
+  finishes, and `Part of <ID>` for one it advances. A chain PR links only its own tickets, never the
+  ones its dependency branches carry, and names those PRs as `Depends on #<n>`. The parent is plain
+  text on section PRs. It shows the work through its sub-issues. Full rule: `/ansh-small-loop`
+  Hard rules. Record the links per PR in `prs[].links` so the loop never infers them.
 - **Status discipline (who moves what):** the planner transitions each in-scope ticket that is
   `triage`/`backlog`/`unstarted` to **In Progress** when its work begins (find `statusType="started"`
   via `list_issue_statuses`, then `save_issue`); the specialist (`/ansh-task`) confirms/sets its
@@ -171,22 +157,22 @@ the tier → model + effort using this mapping:
 
 | effort-dial tier | model | effort | who runs it |
 |---|---|---|---|
-| 🟢 Quick (outlined, mechanical, local) | `sonnet` | low | `/ansh-task` |
-| 🟡 Standard (known-shape feature/bugfix) | `sonnet` | medium | `/ansh-task` |
-| 🔴 Deep (ambiguous / high blast radius / design) | `opus` | high + thinking | escalate — do NOT hand a Deep subtask to a cheap specialist; either split it further into Quick/Standard pieces, or flag it for the orchestrator to run carefully in-session |
+| 🟢 Quick (outlined, mechanical, local) | `gpt-6.1-sol` | high | `/ansh-task` |
+| 🟡 Standard (known-shape feature/bugfix) | `gpt-6.1-sol` | high | `/ansh-task` |
+| 🔴 Deep (ambiguous / high blast radius / design) | `gpt-6-astra` | high / xhigh | escalate — do NOT hand a Deep subtask to a cheap specialist; either split it further into Quick/Standard pieces, or flag it for the orchestrator to run carefully in-session |
 
 A subtask should almost always come out Quick or Standard. **If a subtask stamps Deep, that's a
 signal it isn't decomposed enough** — split it again. The whole point is to push expensive work
-up into planning and keep execution cheap.
+up into planning and keep execution focused without sacrificing model quality.
 
 Also stamp each subtask with a **fresh-eyes recommendation** for its evaluation (consumed by
-`/ansh-review`). Note: `/ansh-review` now runs a **cross-model Codex pass on every evaluation** by
+`/ansh-review`). Note: `/ansh-review` now runs a **independent review on every evaluation** by
 default, so this stamp only signals when to add a HEAVIER mode on top of that baseline:
-- `codex` — the default. Cross-model review is the baseline for every subtask.
+- `independent` — the default. Route through the runtime guide; record actual independence.
 - `review-fresh` — touches auth / payments / migrations / destructive / data-loss → ALSO run
-  parallel no-history Claude agents on top of the Codex pass.
+  parallel no-history reviewer agents on top of the independent pass.
 - `swarm` — large structural change (new slice, consolidation merge, refactor >~10 files)
-  → ALSO run the pr-review-* swarm on top of the Codex pass.
+  → ALSO run the pr-review-* swarm on top of the independent pass.
 
 ## Phase 3.5 — Make every subtask packet-ready (do not skip)
 
@@ -215,7 +201,7 @@ a subtask is not ready to leave the planner until every box is true:
       `"Feature/ServiceName"` in `packages/services`) — point at the sibling slice. Tags/spans must
       be traceable: the span name carries the service. Don't leave naming to the cheap specialist.
 - [ ] **Done-criteria are testable.** Each is a command or observable behavior, not a vibe.
-- [ ] **Self-contained.** A fresh Sonnet agent could execute this from the packet alone, without
+- [ ] **Self-contained.** A fresh economy model agent could execute this from the packet alone, without
       reading your reasoning or re-exploring the codebase.
 
 If a box won't close, the subtask is too big or too vague — split it, research it, or ask. This
@@ -234,7 +220,7 @@ grep -qxF '.ansh/' "$(git rev-parse --git-path info/exclude)" || printf '\n.ansh
 (`git rev-parse --git-path` resolves correctly even in worktrees, where `.git` is a file.) Then
 write three things:
 
-### 4a — `.ansh/plan.md` (the Opus-level high context)
+### 4a — `.ansh/plan.md` (the reasoning-tier high context)
 
 The map you hold that the specialists don't need but the orchestrator and evaluator do:
 goal, the problem in prose, the architecture/data-flow you uncovered, key constraints and
@@ -277,27 +263,31 @@ and tests it. Edge cases that span subtasks stay flagged here for the whole-goal
   ],
   "termination": { "max_iterations": 3, "quality_bar": "all done-criteria pass + /ansh-review clean" },
   "prs": [
-    { "id": "PR1", "branch": "rev-1157-tag-rules-engine", "link_ticket": "REV-1157",
-      "scope_tickets": ["REV-73", "REV-77"], "subtasks": ["T1", "T2", "T3"] }
+    { "id": "PR1", "branch": "rev-73-tag-rules-engine",
+      "links": [{ "ticket": "REV-73", "word": "Closes" }, { "ticket": "REV-77", "word": "Part of" }],
+      "depends_on": [], "subtasks": ["T1", "T2", "T3"] }
   ],
   "subtasks": [
-    { "id": "T1", "title": "...", "tier": "standard", "model": "sonnet", "effort": "medium",
-      "deps": [], "fresh_eyes": "codex", "linear_ticket": "REV-73", "pr": "PR1",
+    { "id": "T1", "title": "...", "tier": "standard", "model": "gpt-6.1-sol", "effort": "high",
+      "deps": [], "fresh_eyes": "independent", "linear_ticket": "REV-73", "pr": "PR1",
       "packet": ".ansh/tasks/T1.md", "status": "todo" }
   ]
 }
 ```
 
-- `parent_ticket` is the **single ticket every PR in this plan links to** — the parent/epic. Required
-  whenever the goal has children. The loop reads it for magic-word linking on every PR.
-- `branch_suggestion` (and every `prs[].branch`) MUST follow `<tag-lower>-<slug>` using the
-  **`parent_ticket` tag**, not a child's — not a generic name either. Single-PR plan → just
-  `branch_suggestion`; sequenced PRs → one `prs[]` entry per PR, each with its own section slug.
-- `prs[].link_ticket` is always `parent_ticket` (it exists so the loop never has to infer it).
-  `prs[].scope_tickets` lists the child ticket(s) that PR advances — **plain-text scope context for
-  the PR body only, never magic-word linked**.
-- `linear_ticket` (string or array) ties each subtask to the child ticket(s) it advances, for planning
-  and traceability. It does **not** drive PR linking. Omit only for untracked scaffolding the user
+- `parent_ticket` is the parent/epic. Record it for context, status and the umbrella PR. Section PRs
+  mention it in plain text and do **not** magic-word link it.
+- `prs[].links` lists every ticket that PR's own diff advances, each with its magic word: `Closes`
+  when this is the ticket's last PR, `Part of` otherwise. Every child ticket must appear in at least
+  one PR's links, and in exactly one `Closes`. Don't list tickets that only arrive through a
+  dependency branch.
+- `prs[].depends_on` lists the PR ids whose branches this one merges or stacks on. They render as
+  `Depends on #<n>`.
+- `branch_suggestion` and every `prs[].branch` MUST follow `<tag-lower>-<slug>`, using the tag of the
+  PR's **primary ticket** (its `Closes` ticket, else its main `Part of`), not a generic name.
+  Single-PR plan → just `branch_suggestion`. Sequenced PRs → one `prs[]` entry per PR.
+- `linear_ticket` (string or array) ties each subtask to the ticket(s) it advances. A PR's `links`
+  must cover the `linear_ticket`s of its subtasks. Omit only for untracked scaffolding the user
   de-scoped.
 - `guardrails`, `acceptance_criteria`, and `exit_criteria` are **goal-level, required whenever this
   plan may be handed to `/ansh-loop`** (i.e. any project-scale goal) — that orchestrator refuses to
@@ -315,13 +305,12 @@ entirely on its own:
 # T1 — <short imperative title>
 
 ## Linear ticket
-- **Scope ticket: REV-73** (the child this subtask advances — planning/traceability only).
-- **Link ticket (parent): REV-1157** — the ONLY ticket that goes in magic-word position on the PR
-  ("Closes REV-1157"). Branch is named off the parent: `rev-1157-<section-slug>`. Reference the scope
-  ticket in the PR body as plain text only; never magic-word a child, and never name a branch after
-  one (Linear auto-attaches on branch name).
-- On pickup, the specialist ensures the **parent** is **In Progress** (move it if it's still
-  triage/backlog/unstarted). Do NOT set In Review/Done — the GitHub integration owns those. Omit
+- **Ticket: REV-73**. This subtask advances it. Its PR (`PR1`, branch `rev-73-<section-slug>`)
+  carries `Closes REV-73` if it's the ticket's last PR, else `Part of REV-73`. List any other ticket
+  the PR advances on its own line too. Mention the parent (REV-1157) in plain text only. Name any
+  dependency PR as `Depends on #<n>`, and don't link its tickets.
+- On pickup, the specialist moves **this ticket** to **In Progress** if it's still
+  triage/backlog/unstarted. Do NOT set In Review/Done; the GitHub integration owns those. Omit
   this section only for untracked scaffolding the user de-scoped.
 
 ## Objective
@@ -362,20 +351,19 @@ how it connects to the pieces around it>
 - [ ] all "Tests to write" above are green
 
 ## Stamp
-tier: standard | model: sonnet | effort: medium | fresh_eyes: codex | deps: []
+tier: standard | model: gpt-6.1-sol | effort: high | fresh_eyes: independent | deps: []
 ```
 
 Render the subtask table inline for the user too, and point them at `.ansh/plan.md` for the full
 picture.
 
-## Phase 5 — Codex challenge the plan (bulletproof gate, do not skip)
+## Phase 5 — Independent challenge of the plan (bulletproof gate, do not skip)
 
-Before you hand the plan to the loop, get a **cross-model adversarial read of the plan itself.**
-Claude wrote this decomposition, so Claude is blind to its own blind spots. Codex is the orthogonal
+Before you hand the plan to the loop, get an **adversarial read of the plan itself**, preferably independent.
+The author wrote this decomposition with one perspective. An independent reviewer provides another
 mind that tries to break it.
 
-Invoke **`/ansh-codex challenge`**. It does the binary/auth check, the invocation and the
-presentation. It reads the plan you just wrote (`.ansh/plan.md` + `.ansh/plan.json` + the
+Use the runtime guide's **independent-review routing** in challenge mode. Pass the plan, packets and criteria; request a read-only adversarial review. Record reviewer identity and independence in `plan.md`. It reads the plan you just wrote (`.ansh/plan.md` + `.ansh/plan.json` + the
 `.ansh/tasks/*.md` packets). Frame the challenge explicitly around the decomposition, not the code
 (there's no code yet):
 
@@ -384,7 +372,7 @@ presentation. It reads the plan you just wrote (`.ansh/plan.md` + `.ansh/plan.js
 - **Wrong ordering / hidden dependencies** — a subtask that can't actually start until another
   finishes, but isn't marked as a dep.
 - **Unhandled edge cases** — failure modes the feature-wide edge-case analysis missed. This is the
-  highest-value attack: a cross-model mind catches boundary/concurrency/permission cases Claude
+  highest-value attack: a cross-model mind catches boundary/concurrency/permission cases the author
   glossed.
 - **Weak done-criteria** — criteria that are vibes, not testable; criteria that would pass while
   the feature is still broken.
@@ -398,15 +386,14 @@ Then **fold the findings back in** before handing off:
   edge cases into the owning packet's "Watch out for" / "Tests to write". Re-run the Phase 3.5
   readiness checklist on anything you touched.
 - Rejected findings → note in `.ansh/plan.md` why (so the loop and a future you don't re-litigate).
-- If Codex surfaces a genuine product/scope/direction question you can't resolve from the code, it's
+- If the independent reviewer surfaces a genuine product/scope/direction question you can't resolve from the code, it's
   the user's call — `AskUserQuestion`, don't silently re-architect.
 
-If Codex is unavailable (`/ansh-codex` ends with `CODEX_UNAVAILABLE`),
-do a rigorous in-session adversarial self-challenge instead and note in `plan.md` that the
-cross-model plan challenge was skipped. Don't skip the adversarial pass entirely — just record
-that it wasn't cross-model.
+If no independent reviewer is available, perform a rigorous in-session adversarial
+challenge and record `independence: in-session` and the unavailable capability in `plan.md`.
+Do not claim the pass was cross-model or independent.
 
-A plan that hasn't survived a Codex challenge is not ready to hand off.
+A plan that hasn't survived an adversarial challenge is not ready to hand off.
 
 ## Re-entry — reframing a kicked-back subtask (planner owns direction)
 
@@ -433,8 +420,8 @@ When invoked to reframe a kicked-back subtask:
 
 By default, do not implement anything. End by telling the user:
 - the subtask count and how many are Quick vs Standard (Deep should be zero — flag if not),
-- **the Codex challenge outcome** — what it found and how you folded it in (or that it was skipped
-  because Codex was unavailable),
+- **the independent challenge outcome** — what it found and how you folded it in (or that it was skipped
+  because independent review was unavailable),
 - the **guardrails / acceptance_criteria / exit_criteria** lists, rendered inline — these are what
   a human confirms next, whichever loop runs them,
 - that `.ansh/plan.md` holds the high context and each `.ansh/tasks/<id>.md` is a self-contained
@@ -444,7 +431,7 @@ By default, do not implement anything. End by telling the user:
   before executing) — or `/ansh-task T1` to run a single subtask directly — **or, if the user
   explicitly authorizes immediate execution, go straight to Phase 6 below instead of stopping here.**
 
-## Phase 6 — Direct dynamic-Workflow execution (only when explicitly authorized)
+## Phase 6 — Direct orchestration (only when explicitly authorized)
 
 Planning and execution are separate roles in the Karpathy loop, and `/ansh-loop`'s
 guardrail/acceptance/exit-criteria sign-off gate exists precisely so project-scale execution never
@@ -456,7 +443,9 @@ following message — explicitly directs you to run the fleet now ("run it", "fl
 execute this via a workflow," "kick off the agents"), treat that as the sign-off for the subtasks
 covered by this plan and dispatch directly, without a second confirmation round-trip:
 
-- Build a Workflow script (the `Workflow` tool) that turns each ready packet into an `agent()` call.
+- Use the runtime guide's available orchestration backend. With delegation, turn each ready
+  packet into a child task; without delegation, execute ready packets serially. The `agent()` /
+  `pipeline()` / `parallel()` mechanics below are examples only for an exposed Workflow API.
   Prompt each agent to read its `.ansh/tasks/<id>.md` packet in full and execute it exactly — Files
   to change, Answered questions, Guardrails, self-verify against Done-criteria before finishing.
   If an agent's isolation (e.g. a fresh worktree) won't reliably have `.ansh/` on disk, inline the
@@ -495,6 +484,6 @@ independently-scoped, non-project-scale subtasks in this same planning pass.
 
 ## Completion status
 
-End with **DONE** (plan written), **DONE — DISPATCHED** (plan written and a Phase 6 Workflow was
-launched; name what ran and what was held back), **NEEDS_CONTEXT** (blocked on a user answer), or
+End with **DONE** (plan written), **DONE — DISPATCHED** (plan written and Phase 6 execution was
+started; name what ran and what was held back), **NEEDS_CONTEXT** (blocked on a user answer), or
 **DONE_WITH_CONCERNS** (plan written but a subtask wouldn't decompose below Deep — name it).

@@ -1,23 +1,12 @@
 ---
 name: ansh-small-loop
-description: ORCHESTRATOR for the Karpathy loop — ONLY for small, scoped tickets. Takes a goal (a Linear ticket or a plain-prose task, not a project) from understanding through shipping using the /ansh- role skills. Conducts plan → execute → evaluate → revise as a real closed loop with explicit termination (all done-criteria pass, or max iterations), decides when to pull in fresh/cross-model eyes, then ships. Calls /ansh-plan (planner), /ansh-task (specialist), /ansh-review (evaluator), /ansh-debug (bug loop), and after push /ansh-resolve (outer loop), wiring in the glue skills (effort-dial, chill-describe, gold-star, linear-sync, lightweight-sql). Runs a scope gate FIRST: a project-scale goal (spans a Linear project/multiple parent tickets, needs product/architecture judgment calls, or the shape of the work genuinely isn't settled) is handed off to /ansh-loop (the project-scale orchestrator, which requires an explicit walk-through of acceptance/exit criteria and runs via dynamic Workflows) instead of run here. Use when the user says "/ansh-small-loop" or hands over a SMALL, SCOPED goal — a single ticket, bugfix, or well-bounded feature — to drive end-to-end. Do NOT use for a project or multi-ticket initiative; that's /ansh-loop.
-allowed-tools:
-  - Bash
-  - Read
-  - Edit
-  - Write
-  - Grep
-  - Glob
-  - AskUserQuestion
-  - Agent
-  - Skill
-  - mcp__claude_ai_Linear__get_issue
-  - mcp__claude_ai_Linear__list_comments
-  - mcp__claude_ai_Linear__save_comment
-  - mcp__claude_ai_Linear__save_issue
+description: "Drive one small, scoped ticket or task through plan, execute, evaluate, revise and ship with bounded iterations and human checkpoints. Route bugs to /ansh-debug and PR feedback to /ansh-resolve. Use /ansh-small-loop for a single bounded goal; hand project-scale work to /ansh-loop."
 ---
 
 # /ansh-small-loop — Orchestrator (small, scoped tickets)
+
+**Runtime:** Read [ANSH runtime compatibility](../_shared/runtime.md) before starting.
+Use its tool, model, path and review mappings for provider-specific examples below.
 
 The conductor. It does not plan, code, or review directly — it sequences the `/ansh-` role
 skills into the Karpathy generator→evaluator→revise cycle, holds the loop state, and decides when
@@ -73,31 +62,32 @@ right-size → PLAN → ┌─► TASK ─► REVIEW ─┬─ PASS ──► SH
   a routine worktree cleanup into real data loss (this is exactly how the FND-1715 plumbing work
   was lost before this run). Hand back with the branch showing real commits for the user to review
   in their source-control editor; push + PR only after they approve.
-- Never push to `main`/`master`. Work on the branch `/ansh-plan` proposes — which, when a Linear
-  ticket exists, follows `<tag-lower>-<slug>` derived from the **parent/epic** ticket (e.g.
-  `rev-669-availability-request-integration`), one branch per PR. Don't invent a generic branch
-  name when a ticket exists, and don't name section branches after child tickets (see the linking
-  rule below — branch name is what Linear auto-attaches on).
-- **Linear status flows with the work.** The planner moves the parent/epic to In Progress when
-  work begins. Let the GitHub integration move `In Review`/`Done` — the loop never sets those by
-  hand. At SHIP, link the **parent** ticket inline in the PR body (e.g. "Closes <PARENT>"), per
-  `/chill-describe`.
-- **ALL PRs link to the PARENT ticket — never to child tickets.** Child/sub-issues exist to scope
-  and plan the work, not to collect PR links; attaching a PR to each child crowds the board and
-  scatters the lineage. So:
-  - Every section PR **and** the umbrella PR attach to the **same parent/epic ticket**, under the
-    parent's name. That keeps stacking and lineage clean — one ticket shows the whole PR series in
-    order.
-  - **Section branches are named off the parent ticket**, `<parent-tag-lower>-<slug>` where `slug`
-    describes the *section* (e.g. parent `REV-1157` → `rev-1157-payrule-thresholds`,
-    `rev-1157-hours-accumulator`). Linear auto-links on the branch name, so a child-named branch
-    silently attaches to the child — this is the rule that actually enforces the convention.
-  - Only the **parent** id goes in magic-word position ("Closes REV-1157"). Reference the child in
-    the PR body as **plain text for traceability** (e.g. "Scope: REV-1163 (hours calculator)") —
-    plain text, never a magic word, so it reads as context without creating an attachment.
-  - Never fabricate ticket numbers. Children still get created by the planner for scope/planning;
-    they just don't receive PR links.
-  - (A trivial single-ticket goal has no children — the one ticket is the parent.)
+- Never push to `main`/`master`. Work on the branch `/ansh-plan` proposes. When a Linear ticket
+  exists, the branch follows `<tag-lower>-<slug>`, derived from the PR's **primary ticket** (see the
+  linking rule below), with one branch per PR. Don't invent a generic branch name when a ticket
+  exists.
+- **Linear status flows with the work.** The planner moves each ticket to In Progress when its work
+  begins. Let the GitHub integration move `In Review`/`Done`; the loop never sets those by hand.
+- **Every PR links to every ticket its own diff advances, and only those.** Ansh reads the board
+  per ticket ("which PR is this ticket's?"), so a PR shows up on each child it serves, not stacked on
+  the parent. The rule:
+  - **Magic words, one line per ticket, in the PR body:**
+    - `Closes <ID>` for a ticket this PR finishes. That's the last PR for that ticket, or its only one.
+    - `Part of <ID>` for a ticket this PR advances but doesn't finish. Linear attaches it without
+      closing.
+    - A PR that serves two children gets two lines. Never fabricate ticket numbers.
+  - **Name the branch off the PR's primary ticket**, `<primary-tag-lower>-<slug>`: the ticket it
+    closes, or the one it mostly advances. Linear auto-attaches on branch name, so a parent-named
+    branch silently stacks every section PR onto the parent.
+  - **The parent/epic is not linked from section PRs.** Mention it in plain text ("parent REV-1157")
+    for context. The parent already shows the work through its sub-issues. Link the parent only when
+    the PR is the parent's own work: the ticket has no children, or this is the umbrella PR to `main`.
+  - **In a chain or stack, link only what this PR's own commits do.** Don't inherit the tickets of
+    the dependency branches merged or stacked under it. Those PRs link their own tickets. Express
+    the dependency as `Depends on #<n>` instead.
+  - **Verify after opening.** Each linked ticket should show the PR as an attachment, and the parent
+    should not (unless it's linked by rule). Fix gaps with `save_issue links` and say so.
+  - A trivial single-ticket goal has one ticket, and the PR links it with `Closes`.
 - Honor every STOP point in the sub-skills. Surface their `AskUserQuestion` gates; don't auto-decide.
 - **Never commit the `.ansh/` working dir, and never add it to the tracked `.gitignore`.** Keep it
   out of git via the local exclude only:
@@ -183,7 +173,7 @@ the subtask decomposition.
 Walk the subtasks in dependency order. For each:
 
 1. **`/ansh-task <id>`** — the specialist reads its packet, runs its conviction gate, then
-   implements + self-verifies. (On Sonnet/low-med per the stamp; Deep-stamped items should not
+   implements + self-verifies. (On economy model/low-med per the stamp; Deep-stamped items should not
    exist — if one does, split via `/ansh-plan` first.)
    - If it returns **NEEDS_REPLAN** (low conviction or a discovery written to
      `.ansh/discoveries.md`): the specialist does NOT redirect — that's not its job. Route the
@@ -191,8 +181,8 @@ Walk the subtasks in dependency order. For each:
      decide direction (escalating to the human if it's a real judgment call). Then re-dispatch the
      (possibly re-split) subtask. Count it against `max_iterations`.
    - If it returns **BLOCKED** (environment/tooling): surface to the user.
-2. **`/ansh-review`** for that subtask — scores against its done-criteria. It runs a **cross-model
-   Codex review pass by default on every evaluation** (that's where the real bugs surface), and adds
+2. **`/ansh-review`** for that subtask — scores against its done-criteria. It runs a **independent
+   review pass by default on every evaluation** (that's where the real bugs surface), and adds
    `review-fresh` / `swarm` on top when the fresh-eyes stamp or risk calls for it.
 3. Branch on the verdict:
    - **PASS** → next subtask.
@@ -207,29 +197,33 @@ the plan was probably wrong; route back to `/ansh-plan`.
 ## Step 3 — Whole-goal evaluation
 
 When all subtasks PASS, do one evaluation against the plan's overall `definition_of_done` (not
-just per-subtask criteria). This landing-gate evaluation runs the **cross-model Codex pass** like
+just per-subtask criteria). This landing-gate evaluation runs the **cross-model independent pass** like
 every other review; if the goal touches auth / payments / migrations / destructive surface, ALSO
-run `review-fresh` (no-history Claude eyes) on top for a second independent read. This is the
+run `review-fresh` (fresh reviewer eyes) on top for a second independent read. This is the
 landing gate.
 
 ## Step 4 — SHIP (integration branch + small section PRs)
 
 Ship as an integration branch with small section PRs merging into it — never one big PR to `main`.
-1. **Open the umbrella PR once:** `integration-branch → main`, titled/linked to the parent/epic
-   ticket. Keep it as the running sum; it stays open while sections land.
-2. **For each section, small-first, in dependency order:** cut a section branch off the integration
-   branch — named `<parent-tag-lower>-<section-slug>`, never after a child ticket — commit its small
-   per-change commits (already made in Step 2, not batched here), and open a PR **targeting the
-   integration branch** (`gh pr create --base <integration-branch>`). Keep each diff tight (~8–10
-   files max, one layer/subtask); `/chill-describe` the message. Merge it into the integration branch
-   before opening the next dependent section.
+1. **Open the umbrella PR once:** `integration-branch → main`, titled after the parent/epic and
+   linked to it (`Closes <PARENT>`). Keep it as the running sum; it stays open while sections land.
+2. **For each section, small-first, in dependency order:** cut a section branch named
+   `<primary-tag-lower>-<section-slug>` after the section's primary ticket. Follow
+   [stacking](../_shared/stacking.md) for the base:
+   - Branch off the integration branch once the section's dependencies have merged.
+   - While a dependency PR is still open, branch off that dependency's branch, target it, and add
+     `Depends on #<n>`.
+
+   Always cut from a freshly fetched `origin/<base>`, and merge the base in again before pushing.
+   Commit the section's small per-change commits (already made in Step 2, not batched here). Keep
+   each diff tight (~8–10 files max, one layer/subtask), and `/chill-describe` the message.
+   Retarget and merge up the stack as each dependency lands (stacking, "When a dependency merges").
 3. Apply `/chill-describe` to every commit + PR body (holistic Problem/Fix/Impact, no trailers/emoji).
-   **Link the PARENT ticket only** in magic-word position ("Closes <PARENT>"); name the section's
-   child ticket as plain-text scope context, never as a link/magic word. Every PR in the series —
-   sections and umbrella — attaches to that same parent, so the ticket shows the whole stack in
-   order. Create/update PRs directly with `git push` + `gh pr create` / `gh pr edit --body` — if
-   a PR template gets auto-injected into the body, overwrite it with the chill-describe-compliant
-   text before handing the URL back.
+   **Link the section's own tickets** per the Hard rules linking rule: `Closes` for each ticket it
+   finishes, `Part of` for each it advances, the parent in plain text only, and dependency PRs as
+   `Depends on #<n>`. Create/update PRs directly with `git push` + `gh pr create` / `gh pr edit --body`.
+   If a PR template gets auto-injected into the body, overwrite it with the chill-describe-compliant
+   text before handing the URL back. Then verify the attachments landed on the right tickets.
 4. Post each section PR URL back (note its base = the integration branch). The umbrella PR to `main`
    merges last, once all sections are in and green.
 

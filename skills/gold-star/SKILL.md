@@ -1,9 +1,12 @@
 ---
 name: gold-star
-description: Treat a designated piece of code as the gold standard — superior context — and hold or write other code to its pattern. Use when the user points at a function/file/module as "the gold star", "the reference", "the example to follow", or invokes /gold-star, and wants surrounding or new code reviewed against it (or written to match it). The user names the reference and the target scope; this skill extracts WHY the reference is good and applies those principles as the rubric.
+description: "Treat a designated piece of code as the gold standard — superior context — and hold or write other code to its pattern. Use when the user points at a function/file/module as \"the gold star\", \"the reference\", \"the example to follow\", or invokes /gold-star, and wants surrounding or new code reviewed against it (or written to match it). The user names the reference and the target scope; this skill extracts WHY the reference is good and applies those principles as the rubric."
 ---
 
 # gold-star
+
+**Runtime:** Read [ANSH runtime compatibility](../_shared/runtime.md) before starting.
+Use its tool, model, path and review mappings for provider-specific examples below.
 
 One piece of code is the gold standard. Other code should be held to its pattern. This skill turns that reference into a rubric and applies it — as a review, a cleanup, or a template for new code.
 

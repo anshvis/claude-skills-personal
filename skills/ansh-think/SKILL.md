@@ -1,9 +1,12 @@
 ---
 name: ansh-think
-description: Structured problem-solving think-through — walks a problem down a fixed tree (problem → candidate solutions → each solution's shape, build tier, and reusability → cross-solution comparison → pros/cons → is-it-worth-it/lift-and-ROI → blast radius/infra considerations on the rest of the app, both positive and negative) before recommending a direction. Use when the user says "/ansh-think", asks to "think through" a problem, or wants a structured options-and-tradeoffs analysis rather than an immediate implementation. Produces a recommendation, not code — hand the chosen solution to /ansh-plan or /ansh-task to execute.
+description: "Structured problem-solving think-through — walks a problem down a fixed tree (problem → candidate solutions → each solution's shape, build tier, and reusability → cross-solution comparison → pros/cons → is-it-worth-it/lift-and-ROI → blast radius/infra considerations on the rest of the app, both positive and negative) before recommending a direction. Use when the user says \"/ansh-think\", asks to \"think through\" a problem, or wants a structured options-and-tradeoffs analysis rather than an immediate implementation. Produces a recommendation, not code — hand the chosen solution to /ansh-plan or /ansh-task to execute."
 ---
 
 # /ansh-think — Structured problem think-through
+
+**Runtime:** Read [ANSH runtime compatibility](../_shared/runtime.md) before starting.
+Use its tool, model, path and review mappings for provider-specific examples below.
 
 A thinking skill, not an execution skill. It never edits code. It walks a problem down a fixed
 tree so the comparison between options is explicit instead of vibes, then ends with a clear

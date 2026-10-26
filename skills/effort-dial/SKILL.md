@@ -1,9 +1,12 @@
 ---
 name: effort-dial
-description: Diagnose a task's intensity and deliberately set the effort level before doing the work — matching depth of thinking, exploration, planning, and verification to what the task actually warrants. Use at the start of a substantive request to avoid two failure modes: over-investing on mechanical/outlined work (slow, noisy, over-engineered) and under-investing on ambiguous or high-stakes work (shallow, wrong, missed blast radius). Trigger when a task is non-trivial and the right level of rigor is unclear, when the user explicitly asks to dial effort up or down, or when a task feels mismatched to the effort being spent on it.
+description: "Diagnose a task's intensity and deliberately set the effort level before doing the work — matching depth of thinking, exploration, planning, and verification to what the task actually warrants. Use at the start of a substantive request to avoid two failure modes: over-investing on mechanical/outlined work (slow, noisy, over-engineered) and under-investing on ambiguous or high-stakes work (shallow, wrong, missed blast radius). Trigger when a task is non-trivial and the right level of rigor is unclear, when the user explicitly asks to dial effort up or down, or when a task feels mismatched to the effort being spent on it."
 ---
 
 # Effort Dial
+
+**Runtime:** Read [ANSH runtime compatibility](../_shared/runtime.md) before starting.
+Use its tool, model, path and review mappings for provider-specific examples below.
 
 Right-size effort to the task. Spend a few seconds diagnosing, pick a tier, then commit to that tier's behavior. Re-diagnose if the task turns out bigger or smaller than it first looked.
 

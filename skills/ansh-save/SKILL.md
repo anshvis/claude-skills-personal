@@ -1,16 +1,12 @@
 ---
 name: ansh-save
-description: HANDOFF / context-freeze in the Karpathy loop. Captures everything that would be lost if this chat ended — the goal, what's done vs not, the repo state (branch/commits/PRs/CI), the decisions made AND their rationale, open questions, landmines discovered, and the ordered next steps — into one durable, resumable .md under .ansh/saves/. The point is the REASONING that lives only in the chat: why a decision went the way it did, what was ruled out and why, the gotcha you hit at 2am. A fresh session reads the save file and picks up where you left off without re-deriving anything. Use when the user says "/ansh-save", "save context", "save this for later", "I'm stopping, snapshot this", or before stepping away from in-progress work. NOT for durable cross-session facts (that's memory) and NOT a plan (that's /ansh-plan's .ansh/plan.md) — this is a point-in-time work handoff.
-allowed-tools:
-  - Bash
-  - Read
-  - Write
-  - Glob
-  - Grep
-  - Skill
+description: "Freeze the current goal, progress, repository state, decisions and rationale, open questions, landmines and next steps into .ansh/saves/ for another session or provider to resume. Use /ansh-save, save context, or a request for a work handoff. This is a snapshot of in-progress work, not a new plan or a replacement for durable memory."
 ---
 
 # /ansh-save — Context freeze / handoff
+
+**Runtime:** Read [ANSH runtime compatibility](../_shared/runtime.md) before starting.
+Use its tool, model, path and review mappings for provider-specific examples below.
 
 Stopping mid-stream. The expensive thing in this chat isn't the code — that's on disk and in
 git. It's the **context that exists only in the conversation**: why this approach won over the
@@ -19,7 +15,7 @@ next step, the thread I'm waiting on. Lose that and the resume costs an hour of 
 
 This skill freezes that into one `.md` a future me (or a fresh agent) reads cold and continues.
 
-**Effort: cheap.** This is synthesis of what already happened, not new thinking. Sonnet-tier.
+**Effort: cheap.** This is synthesis of what already happened, not new thinking. economy-tier.
 Be thorough on *capture*, not clever.
 
 ## Where it writes
