@@ -12,27 +12,32 @@ Runs on Claude Code (`/ansh-plan`) and Codex (`$ansh-plan`). See [runtime](skill
 | Doc | Owns |
 |---|---|
 | [autonomy](skills/_shared/autonomy.md) | No human in the loop, agent defaults, never-do list and parking, merge rule, stop conditions, subagents |
-| [verification](skills/_shared/verification.md) | The verification contract, surface classes, regression, perf, evidence packs |
+| [verification](skills/_shared/verification.md) | The verification contract, the derived surface and who verifies each half, regression, perf, evidence packs |
 | [milestones](skills/_shared/milestones.md) | The `Implementation milestones` section added to web-app's spec-doc TDDs |
 | [principles](skills/_shared/principles.md) | The engineering bar (from pstack) |
 | [ledger](skills/_shared/ledger.md) | Iteration events via `ansh-log` |
-| [stacking](skills/_shared/stacking.md) | Branch bases, merge order, never rewriting shared branches |
+| [stacking](skills/_shared/stacking.md) | PR topology, branch bases, merge order, never rewriting shared branches |
+| [worktrees](skills/_shared/worktrees.md) | One worktree per work item, never leaving verified work uncommitted |
+| [tickets](skills/_shared/tickets.md) | Branch names, PR link words, Linear status ownership |
 | [runtime](skills/_shared/runtime.md) | Host mapping, model routing, independent review |
 
 ## Skills
 
 | Skill | Goal |
 |---|---|
-| [`/ansh-small-loop`](skills/ansh-small-loop/SKILL.md) | One scoped ticket to a merged, verified PR. |
-| [`/ansh-loop`](skills/ansh-loop/SKILL.md) | A project to merged, verified PRs, in dependency-ordered waves. |
+| [`/ansh-small-loop`](skills/ansh-small-loop/SKILL.md) | Conduct one scoped ticket to a merged, verified PR. |
+| [`/ansh-loop`](skills/ansh-loop/SKILL.md) | Conduct a project to merged, verified PRs, in dependency-ordered waves. |
 | [`/ansh-plan`](skills/ansh-plan/SKILL.md) | TDD or ticket to milestones and self-contained task packets with verification contracts. |
-| [`/ansh-task`](skills/ansh-task/SKILL.md) | One packet to the smallest diff that makes its red-first check pass. |
-| [`/ansh-verify`](skills/ansh-verify/SKILL.md) | Own the harness: feature map (local), run contracts, write evidence. |
-| [`/ansh-control`](skills/ansh-control/SKILL.md) | Drive the real app (Playwright/CDP for UI, tmux/PTY/curl for CLI and API) and capture proof. |
-| [`/ansh-review`](skills/ansh-review/SKILL.md) | Independent verdict: rerun verification, plan gap, blast radius, merge lane. |
-| [`/ansh-debug`](skills/ansh-debug/SKILL.md) | Bug to confirmed root cause, fix and a regression check that keeps running. |
-| [`/ansh-resolve`](skills/ansh-resolve/SKILL.md) | One pass over a PR's CI failures and review comments. |
-| [`/ansh-pr-loop`](skills/ansh-pr-loop/SKILL.md) | Resolve until mergeable, then merge under the merge rule. |
+| [`/ansh-cycle`](skills/ansh-cycle/SKILL.md) | Drive one task to a review PASS: task, review, route the verdict, within the round budget. |
+| [`/ansh-task`](skills/ansh-task/SKILL.md) | One packet to the smallest diff that makes its red-first check pass, committed. |
+| [`/ansh-verify`](skills/ansh-verify/SKILL.md) | Own the harness: feature map (local), run contracts by surface, write evidence. |
+| [`/ansh-control`](skills/ansh-control/SKILL.md) | Drive the app's UI through Playwright or CDP and capture proof. |
+| [`/ansh-backend`](skills/ansh-backend/SKILL.md) | Verify the backend directly: API, DB, jobs, signals and CI, under the right secrets config. |
+| [`/ansh-review`](skills/ansh-review/SKILL.md) | Independent verdict in three modes: `task <id>`, `pr <n>` (the PR gate), `goal` (every AC). |
+| [`/ansh-debug`](skills/ansh-debug/SKILL.md) | Bug to confirmed root cause, fix packets and a regression check that keeps running. |
+| [`/ansh-ship`](skills/ansh-ship/SKILL.md) | Push the plan's PRs per stacking, open or update them with ticket links, start their PR loops. |
+| [`/ansh-resolve`](skills/ansh-resolve/SKILL.md) | One pass over a PR's CI failures, comments and gate findings. The only skill that fixes PR findings. |
+| [`/ansh-pr-loop`](skills/ansh-pr-loop/SKILL.md) | Babysit one PR: gate, resolve until mergeable, prove the head, merge under the merge rule. |
 | [`/ansh-correct`](skills/ansh-correct/SKILL.md) | Turn a repeated mistake into a lint, type or CI check. PRs wait for my review. |
 | [`/ansh-retro`](skills/ansh-retro/SKILL.md) | Read the ledger and propose cuts to these skills, with the numbers. |
 | [`/ansh-think`](skills/ansh-think/SKILL.md) | Options and tradeoffs to a recommendation. No code. |
@@ -47,13 +52,16 @@ shallow ask deeper before planning). From agentic-workflow: `ui-evidence`, `veri
 ## How a run goes
 
 ```
-TDD (spec-doc + milestones, ACs written by me)
-  -> /ansh-plan     Phase 0 checks the TDD, packets with red-first checks, plan challenge
-  -> per task:  /ansh-task -> /ansh-verify run -> /ansh-review
-                  PASS -> next | REVISE -> /ansh-task | DEBUG -> /ansh-debug -> new packets
-  -> whole-goal review against the ACs
-  -> PRs via stacking + chill-describe -> /ansh-pr-loop -> merged (or parked, with the reason)
-  -> report: shipped, parked, agent defaults, inferred ACs, .ansh/decisions.md
+/ansh-small-loop or /ansh-loop
+  -> /ansh-plan
+  -> per task: /ansh-cycle <id>
+       -> /ansh-task <id> -> /ansh-verify run -> /ansh-control | /ansh-backend
+       -> /ansh-review task <id>
+            PASS | REVISE -> /ansh-task or /ansh-plan | DEBUG -> /ansh-debug -> /ansh-cycle <fix>
+  -> /ansh-review goal          (failures -> /ansh-plan -> /ansh-cycle)
+  -> /ansh-ship
+       -> per PR: /ansh-pr-loop <n>
+            -> /ansh-review pr <n> -> /ansh-resolve <n> -> /ansh-verify run -> merge | park
 weekly: /ansh-retro (skills) and /ansh-correct (repo checks)
 ```
 

@@ -38,11 +38,15 @@ time, repo, branch, head SHA and cwd. A failed log write never fails the skill: 
 |---|---|
 | `/ansh-small-loop`, `/ansh-loop` | tier picked, each wave, final status |
 | `/ansh-plan` | plan written, challenge done (one event per agent default) |
+| `/ansh-cycle` | each round's verdict (attempt n, reason), BLOCKED at the budget |
 | `/ansh-task` | red check written, done (attempt n) |
-| `/ansh-review` | verdict per task, whole-goal verdict |
+| `/ansh-review` | verdict per task, per PR gate, whole-goal verdict |
+| `/ansh-ship` | each PR opened or updated |
 | `/ansh-debug` | root cause confirmed, fix verified |
-| `/ansh-resolve`, `/ansh-pr-loop` | each fix (with reason), merged, parked |
+| `/ansh-resolve` | each fix (with reason), dismissal, retry |
+| `/ansh-pr-loop` | merged, parked |
 | `/ansh-verify` | each run (surface, pass or fail) |
+| `/ansh-control`, `/ansh-backend` | each drive or check (surface, pass, fail or blocked) |
 | `/ansh-correct` | class fixed (PR opened), class deferred |
 | `/ansh-retro` | report written (proposal count) |
 | `/ansh-think`, `/ansh-save` | done |
