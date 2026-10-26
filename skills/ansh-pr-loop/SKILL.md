@@ -26,7 +26,8 @@ Arguments: `/ansh-pr-loop [<n>] [via=ansh-loop|ansh-small-loop] [reviewed]`, or
 
 1. **Identify the PR once.** Take `<n>`, or resolve it from the current branch
    (`gh pr view --json number,url,headRefName`). Name it in the first status line. Work in the
-   worktree that tracks its branch. Check ownership: PR author against `gh api user -q .login`.
+   worktree that tracks its branch. Check ownership: PR author against `gh api user -q .login`. Not mine: read-only from here on.
+   Run the gate locally and report. No pushes, comments, fixes or merges (autonomy).
 2. **Pin the head.** `git fetch origin`. If `git merge-base --is-ancestor origin/<base> HEAD`
    fails, merge the base in and push per [stacking](../_shared/stacking.md). Record the head SHA.
 3. **Review gate, once per code state.** Skip on a `reviewed` wakeup. Otherwise reuse a recorded
@@ -57,16 +58,22 @@ Arguments: `/ansh-pr-loop [<n>] [via=ansh-loop|ansh-small-loop] [reviewed]`, or
    4. **Dependencies.** For each `WAITING_ON` PR, post or edit the `waiting-on` comment and watch
       that PR too. When one merges, retarget, merge the new base, re-verify and push per
       [stacking](../_shared/stacking.md), then edit the comment.
-   5. Post a short status: CI per check (CI triage format), reviews, what changed, what blocks.
-6. **Converged when all hold on the head SHA:** every required check's build for this SHA passed;
+   5. **Head moved** (a fix, a base merge, a retarget): rerun `/ansh-review` at the new head for a
+      fresh `VERDICT`, `MERGE_LANE` and `PARKED`. Lens reuse in [review gate](references/gate.md)
+      covers the other three lenses only.
+   6. Post a short status: CI per check (CI triage format), reviews, what changed, what blocks.
+6. **Parked short-circuit.** `/ansh-review` says `PARKED: yes`, or `/ansh-resolve` returns PARKED:
+   finish every check that doesn't need the forbidden action, then go straight to the parked branch
+   of step 8. Don't wait for a green that needs the parked step.
+   **Converged when all hold on the head SHA:** every required check's build for this SHA passed;
    no review at `CHANGES_REQUESTED`; `/ansh-resolve` returned DONE with every comment traced;
    vitalize-agent passed this SHA; every gate blocker and major is fixed or has an agent default;
    no new major-or-worse finding since the gate; `/ansh-review` says `VERDICT: PASS`.
-7. **Prove the head.** The verification pack's `verdict.json` must exist for this exact SHA with
-   every check passing ([verification](../_shared/verification.md)). Any new commit, including a
+7. **Prove the head.** The evidence `manifest.json` for this exact SHA must list every check in
+   every packet this PR covers, each passing ([verification](../_shared/verification.md)). Any new commit, including a
    base merge, needs `/ansh-verify run` again. Post the evidence comment on Ansh's own PR.
 8. **Merge decision**, first match wins:
-   - Not our PR: never merge. Report the gate and resolve findings. Outcome `needs_review`.
+   - Not our PR: never merge, never post. Report the gate findings. Outcome `needs_review`.
    - `/ansh-correct` hardening PR (label `ansh-correct` or title prefix `ansh-correct:`): request
      Ansh as reviewer, post the comment, stop. Outcome `awaiting_approval`.
    - `PARKED: yes`, or merging would do anything on autonomy's never-do list: post the parked
@@ -75,13 +82,15 @@ Arguments: `/ansh-pr-loop [<n>] [via=ansh-loop|ansh-small-loop] [reviewed]`, or
      the base is current ([stacking](../_shared/stacking.md)).
    - `MERGE_LANE: deep`: run the deep lane at the head SHA in a fresh subagent: `/ansh-review`
      in deep lane, which does a fresh-context review and re-runs the verification itself. Its
-     `DEEP_LANE` line must read `done` and `pass`. Fix blockers and majors and go back to step 5.
-     Post the deep-lane comment.
-   - Otherwise merge: `gh pr merge <n> --squash`. If a base-branch rule blocks a direct merge
-     (e.g. the deploy-line-stopped ruleset), arm `--squash --auto` instead.
+     `DEEP_LANE` line must read `done` and `pass`. On pass, record `deep_lane_sha` in the state
+     file, post the deep-lane comment and fall through to the merge below. On fail, fix blockers
+     and majors and go back to step 5. A new head clears `deep_lane_sha`.
+   - Otherwise merge, pinned to the verified head: `gh pr merge <n> --squash --match-head-commit
+     <sha>`. If a base-branch rule blocks a direct merge (e.g. the deploy-line-stopped ruleset), arm
+     `--squash --auto --match-head-commit <sha>` so a later head can't merge unverified.
      If branch protection needs a non-author approval, request CODEOWNERS, post the
      awaiting-approval comment, arm `--auto` and keep watching. Outcome `awaiting_approval`.
-9. **Log and stop.** After a merge, `ansh-log ansh-pr-loop merge merged --pr <n>`. Write one
+9. **Log and stop.** After a merge, `ansh-log ansh-pr-loop merge merged --pr <n> --goal <g> --milestone <M-n> --surface <s>`. Write one
    outcome line ([outcomes](references/outcomes.md)). Unwatch the PR and stop the cadence.
 
 ## Cadence
@@ -108,7 +117,7 @@ Arguments: `/ansh-pr-loop [<n>] [via=ansh-loop|ansh-small-loop] [reviewed]`, or
 | Head SHA moved since verification (base merge, loop fix) | Re-run verification at the new SHA before merging. |
 | Recorded gate predates a lens, or plan changed | Partial re-run per [review gate](references/gate.md). |
 | A gate lens can't run on this host | Mark it `unavailable`. Never review in the loop agent. A missing fresh-context lens on the deep lane is BLOCKED. |
-| `/ansh-review` says `PLAN_GAP: large` | Fix toward the plan when it's clear. When the code beats a stale plan, keep the code, record an agent default and note it on the ticket. Extra scope moves to a follow-up ticket. |
+| `/ansh-review` says `PLAN_GAP: large` | Fix toward the plan when it's clear. When the code beats a stale plan, keep the code and run `/ansh-plan` re-entry to update the plan (agent default in `decisions.md`, note on the ticket), then rerun `/ansh-review`. Extra scope moves to a follow-up ticket. |
 | A fix raises the blast radius to high | The lane becomes deep. Run the deep lane before merging. |
 | Auto-merge armed and a new commit is about to be pushed | `gh pr merge <n> --disable-auto` first. Re-arm only after vitalize-agent passes the new head. |
 | vitalize-agent hasn't reviewed the head | Don't merge, even with CI green. GitHub's `--auto` doesn't wait for it. |

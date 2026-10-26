@@ -85,11 +85,13 @@ phase runs in both modes.
      contracts and the rest above). Deep needs a fresh-context review plus an independent re-run of
      the verification, both at the head SHA. No fresh context available: BLOCKED.
    - `merge_lane: standard` otherwise.
-   - `parked: yes` when merging would do something on autonomy.md's never-do list (a destructive
+   - `parked: yes` when the task, milestone or PR has `parked_at_merge: true` in `plan.json`, or
+     when merging would do something on autonomy.md's never-do list (a destructive
      migration or backfill on deploy, applying infra or deploying on merge, someone else's PR).
    - List each `Depends on #<n>` with its state. Open or parked dependencies go in `WAITING_ON`.
      They change when it merges, not the verdict.
-8. **Independent review.** Send intent, criteria, watch-outs, plan sources and the diff (not the
+8. **Independent review.** Skip the outside reviewer when called with `gate` from `/ansh-pr-loop`:
+   the gate's Independent lens supplies it. Otherwise send intent, criteria, watch-outs, plan sources and the diff (not the
    author's reasoning) to an independent reviewer per runtime.md. Record provider, model and
    independence. Also do your own adversarial pass: races, missing error paths, leaks, security
    boundaries. Add a fresh-context review on the deep lane or when the packet says

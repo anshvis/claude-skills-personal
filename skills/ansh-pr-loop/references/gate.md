@@ -34,7 +34,7 @@ and posts.
 
 | Lens | How |
 |---|---|
-| `/ansh-review` | PR mode with the PR number and SHA. Return its verdict block ([output](../../ansh-review/references/output.md)); the loop agent posts its `<!-- ansh-review:merge-call -->` comment. Read `VERDICT`, `MERGE_LANE`, `PARKED` and `WAITING_ON` from it. |
+| `/ansh-review` | PR mode with the PR number, SHA and `gate` flag: the gate's Independent lens is its independent pass, so it runs only its own adversarial pass. Return its verdict block ([output](../../ansh-review/references/output.md)); the loop agent posts its `<!-- ansh-review:merge-call -->` comment. Read `VERDICT`, `MERGE_LANE`, `PARKED` and `WAITING_ON` from it. |
 | `/review-fresh` | Its capture rebases, so run it in a detached temporary worktree at the SHA, diffing against `origin/<base>`. Argument: the PR title as intent. |
 | Independent | Per runtime's independent review, with the PR intent and riskiest areas as watch-outs. Record provider, model and independence. Label findings `independent`. |
 | `/thermo-nuclear-code-quality-review` | It sets `disable-model-invocation`, so the Skill tool can't load it. Brief a background subagent to read `../thermo-nuclear-code-quality-review/SKILL.md` and apply it to the diff. Return findings as presumptive-blocker, major or minor with `path:line`. |
