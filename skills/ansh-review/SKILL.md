@@ -14,7 +14,7 @@ description: "Give an independent PASS, REVISE or DEBUG verdict on a task, a PR 
 [/codex](../codex/SKILL.md), [/review-fresh](../review-fresh/SKILL.md),
 [/thermo-nuclear-code-quality-review](../thermo-nuclear-code-quality-review/SKILL.md),
 [/ansh-debug](../ansh-debug/SKILL.md), [/ansh-plan](../ansh-plan/SKILL.md),
-[/ansh-correct](../ansh-correct/SKILL.md), [PR gate](references/gate.md),
+[/ansh-correct](../ansh-correct/SKILL.md), [memory](../_shared/memory.md), [PR gate](references/gate.md),
 [blast radius](references/blast-radius.md), [output format](references/output.md).
 
 Review on Astra per runtime, xhigh on the deep lane. Never on a cheap model: a shallow review gives
@@ -45,7 +45,9 @@ false confidence.
    `.agents/skills/best-practices/references/` the diff touches. For Effect, use
    `bunx effect-solutions show <topic>` and `submodules/effect`. Before calling a pattern wrong,
    check the nearest good sibling slice. Matching a good neighbor isn't a finding. Matching a
-   known-bad one still is: cite the reference doc.
+   known-bad one still is: cite the reference doc. Read project memory per
+   [memory](../_shared/memory.md) with the diff summary. A diff that repeats an approved
+   `correction` or breaks a `convention` is Act on, citing the memory id.
 3. **Rerun verification.** Don't trust the author's evidence. Run `/ansh-verify run` with the
    contract at the head SHA. Then judge it:
    - **Strength.** Could it pass while the feature is broken? If yes, Act on (`weak-verification`).

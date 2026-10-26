@@ -11,7 +11,7 @@ round's evidence.
 **Uses:** [`/ansh-task`](../ansh-task/SKILL.md), [`/ansh-review`](../ansh-review/SKILL.md),
 [`/ansh-debug`](../ansh-debug/SKILL.md), [`/ansh-plan`](../ansh-plan/SKILL.md),
 [autonomy](../_shared/autonomy.md), [runtime](../_shared/runtime.md),
-[stacking](../_shared/stacking.md), [ledger](../_shared/ledger.md) (`../_shared/ansh-log`),
+[stacking](../_shared/stacking.md), [ledger](../_shared/ledger.md) (`../_shared/ansh-log`), [memory](../_shared/memory.md),
 [plan.json](../ansh-plan/references/plan-json.md).
 
 Arguments: `/ansh-cycle <task-id> [deep] [node]`. `deep` comes from a Deep conductor tier. `node`
@@ -50,7 +50,8 @@ means it runs inside a Workflow script (see step 5).
    allowance. When that runs out, log BLOCKED and return BLOCKED with each round's evidence. A
    plateau means a new approach through re-entry, never a relaxed check (autonomy).
 7. **Log** each round: `ansh-log ansh-cycle round <PASS|REVISE|DEBUG|NEEDS_REPLAN|BLOCKED> --task <id>
-   --attempt <n> --reason <reason>`.
+   --attempt <n> --reason <reason>`. A REVISE class seen for the second time in this goal is saved
+   as a `correction` candidate per [memory](../_shared/memory.md).
 
 ## Edge cases
 

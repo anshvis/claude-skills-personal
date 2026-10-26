@@ -35,7 +35,8 @@ capture, not clever.
 4. **Write** `.ansh/saves/<date>-<slug>.md` and copy it to `.ansh/saves/LATEST.md`. Slug from the
    ticket or branch. Never overwrite an earlier save: the trail matters.
 5. **Route durable facts.** A preference, recurring gotcha or project constraint that outlives
-   this work goes to memory too. A recurring code mistake goes to `/ansh-correct`.
+   this work goes to project memory per [memory](../_shared/memory.md). A recurring code mistake
+   goes to `/ansh-correct`.
 6. Log `ansh-log ansh-save saved DONE --note "<save path>"`.
 
 ## Template

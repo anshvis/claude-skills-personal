@@ -8,7 +8,7 @@ description: "Verify the backend directly: API responses, DB state, jobs, crons 
 **Goal:** prove what the backend did at a given SHA, with evidence another agent can rerun.
 
 **Uses:** [verification](../_shared/verification.md), [autonomy](../_shared/autonomy.md),
-[principles](../_shared/principles.md), [ledger](../_shared/ledger.md) (`../_shared/ansh-log`),
+[principles](../_shared/principles.md), [ledger](../_shared/ledger.md) (`../_shared/ansh-log`), [memory](../_shared/memory.md),
 [CLI tools](../_shared/cli-tools.md), [recipes](references/recipes.md),
 [CI triage](../ansh-resolve/references/ci-triage.md), `_stack.md` from
 [/ansh-verify](../ansh-verify/SKILL.md), [/ansh-control](../ansh-control/SKILL.md),
@@ -67,6 +67,8 @@ performs the user action and this skill asserts that action's side effects at th
    the task's dir when `/ansh-verify` passes one): the command, the config name (never values),
    the output and the verdict. Clean up what you started. Log
    `ansh-log ansh-backend check <PASS|FAIL|BLOCKED> --surface backend --task <id> --ids <AC-n>`.
+   A config, seed or environment trap you had to work around goes to project memory as a `gotcha`
+   candidate per [memory](../_shared/memory.md).
 
 ## Edge cases
 

@@ -8,7 +8,7 @@ description: Own the verification harness (feature map, local stack recipes, evi
 **Goal:** prove a change works on the real app at a given SHA, with evidence another agent can rerun.
 
 **Uses:** [verification](../_shared/verification.md), [autonomy](../_shared/autonomy.md),
-[principles](../_shared/principles.md), [ledger](../_shared/ledger.md), [runtime](../_shared/runtime.md),
+[principles](../_shared/principles.md), [ledger](../_shared/ledger.md), [memory](../_shared/memory.md), [runtime](../_shared/runtime.md),
 [feature map template](references/feature-map-template.md), [/ansh-control](../ansh-control/SKILL.md) (ui half),
 [/ansh-backend](../ansh-backend/SKILL.md) (backend half), `ui-evidence`, `verify-web`, `verify-ios`,
 `/lightweight-sql`, and the toolkit's `verification-lenses.md` and `evidence-pack.md`
@@ -75,6 +75,8 @@ dropping across two retros since the map was set up. `/ansh-retro` reports that 
 8. Cleanup what you started. Confirm the evidence dir survived.
 9. Log one event per check: `ansh-log ansh-verify run <PASS|REVISE> --task T --surface S --ids AC-n`.
 10. Update the feature's `Last verified` SHA. Map drift found while driving: fix the map file now.
+    A stack, seed, port or secrets-config trap that isn't feature-specific goes to project memory
+    as a `gotcha` candidate per [memory](../_shared/memory.md).
 
 ### maintain
 

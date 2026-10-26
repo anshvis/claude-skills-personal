@@ -22,7 +22,8 @@ file be right for the whole repo.
    - ledger events with a `reason` (`missed-edge-case`, `wrong-surface`, `regression`, `lint`, `types`, `review-comment`, `human-correction`, ...) and every `escaped` event;
    - mistake classes `/ansh-review` and `/ansh-resolve` logged (review comments, CI failures);
    - the latest scorer report and its audit patterns: `restate`, `rigor`, `ci_conflicts`, `scope_surface`;
-   - Ansh's corrections in the current session.
+   - Ansh's corrections in the current session;
+   - approved `correction` memories ([memory](../_shared/memory.md)) that keep being cited in REVISE.
    Filter to the target repo.
 2. **Group into classes** by the ledger's `class` field, merging names that mean the same mistake. A class is one wrong move with one fix, for example "new RPC skips the
    tenant guard" or "copy changed in one editor, not the other two". A class counts once it has
@@ -43,7 +44,8 @@ file be right for the whole repo.
    - description per `/chill-describe`: the class, its occurrences, the level picked, the proof output;
    - label `ansh-correct` and request Ansh as reviewer;
    - stop. Never merge it, never enable auto-merge.
-7. **Log.** `ansh-log ansh-correct pr-opened DONE --pr N --reason <reason> --class <class>`.
+7. **Log.** `ansh-log ansh-correct pr-opened DONE --pr N --reason <reason> --class <class>`. Once
+   the check merges, the class's memory is stale: `/ansh-retro` lists it.
 
 ## Rule table
 

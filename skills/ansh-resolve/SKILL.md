@@ -13,7 +13,7 @@ fixes PR findings.
 [`/ansh-verify`](../ansh-verify/SKILL.md),
 [`/chill-describe`](../chill-describe/SKILL.md), [autonomy](../_shared/autonomy.md),
 [verification](../_shared/verification.md), [principles](../_shared/principles.md),
-[stacking](../_shared/stacking.md), [ledger](../_shared/ledger.md) with `_shared/ansh-log`,
+[stacking](../_shared/stacking.md), [ledger](../_shared/ledger.md) with `_shared/ansh-log`, [memory](../_shared/memory.md),
 [runtime](../_shared/runtime.md), [worktrees](../_shared/worktrees.md), [`_shared/cli-tools.md`](../_shared/cli-tools.md),
 [CI triage](references/ci-triage.md), [GitHub recipes](references/github.md).
 
@@ -58,7 +58,9 @@ Arguments: `/ansh-resolve <n> [items=<gate rows>]`. `/ansh-pr-loop` passes the
    --class <slug> --note "<one line>"`. Pick `<reason>` from [ledger](../_shared/ledger.md). The
    class slug names the mistake (`missing-null-check`, `unawaited-effect`, `stale-import`) so
    `/ansh-correct` can group repeats. Log each dismissal as `dismiss DONE --reason review-comment`
-   with the bot or reviewer in the note, and each retry as `retry DONE --reason ci-flake`.
+   with the bot or reviewer in the note, and each retry as `retry DONE --reason ci-flake`. A fix
+   for a human reviewer's comment also goes to project memory, approved, per
+   [memory](../_shared/memory.md), unless it was a one-off.
 10. **Coverage check.** Re-fetch everything from step 2. Every item has a trace. Every thread we
     fixed is resolved. No `CHANGES_REQUESTED` stays on a concern we addressed without a re-review
     request or a bot re-review pending.

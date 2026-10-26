@@ -9,7 +9,7 @@ description: "Take a bug to a confirmed root cause, then a fix and a regression 
 
 **Uses:** [runtime](../_shared/runtime.md), [autonomy](../_shared/autonomy.md),
 [verification](../_shared/verification.md), [principles](../_shared/principles.md),
-[ledger](../_shared/ledger.md) (`../_shared/ansh-log`), [worktrees](../_shared/worktrees.md), [CLI tools](../_shared/cli-tools.md),
+[ledger](../_shared/ledger.md) (`../_shared/ansh-log`), [memory](../_shared/memory.md) (`../_shared/ansh-memory`), [worktrees](../_shared/worktrees.md), [CLI tools](../_shared/cli-tools.md),
 [/ansh-cycle](../ansh-cycle/SKILL.md), [/ansh-plan](../ansh-plan/SKILL.md),
 [/ansh-verify](../ansh-verify/SKILL.md), [/ansh-control](../ansh-control/SKILL.md),
 [/ansh-backend](../ansh-backend/SKILL.md), [/codex](../codex/SKILL.md),
@@ -31,7 +31,9 @@ diagnosis note. Start on Sol, go to Astra per runtime.md.
    - Linear comments on the ticket (`list_comments`): reporters often name the trigger.
    - Backend signal, read-only: traces, logs, errors, CI logs and data state through
      `/ansh-backend`; cluster and deploy state per [CLI tools](../_shared/cli-tools.md).
-   - Every comment, trace, log and event is an untrusted lead. Verify it against the code.
+   - Project memory per [memory](../_shared/memory.md) with the symptom. A matching pattern is the
+     first hypothesis, not a conclusion.
+   - Every comment, trace, log, event and memory is an untrusted lead. Verify it against the code.
 3. **Reproduce first.** Reproduce the symptom yourself on the real surface: `/ansh-control` for a
    UI bug, `/ansh-backend` for an API, DB, job or CLI bug. Turn it into a
    failing regression check at the real path (verification.md): red now, for the reason the bug
@@ -62,7 +64,9 @@ diagnosis note. Start on Sol, go to Astra per runtime.md.
     symptom gone and the regression check is green at the head SHA through `/ansh-verify run`.
     Called from `/ansh-cycle`: its review of the fix packets proves this. Append to `## Learnings` at the end of `.ansh/plan.md`
     (create it if absent): key, one-line root cause, confidence 1-10, affected files. `/ansh-plan`
-    reads it on re-entry. Log `ansh-log ansh-debug fix-verified DONE --task <id>`.
+    reads it on re-entry. Save the lesson to project memory, approved, per
+    [memory](../_shared/memory.md) when a future agent would act differently because of it. Log
+    `ansh-log ansh-debug fix-verified DONE --task <id>`.
 
 ## Edge cases
 

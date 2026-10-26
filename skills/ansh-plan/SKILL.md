@@ -9,7 +9,7 @@ description: "Turn a TDD, Linear ticket or prose goal into milestones and self-c
 
 **Uses:** [autonomy](../_shared/autonomy.md), [verification](../_shared/verification.md),
 [milestones](../_shared/milestones.md), [principles](../_shared/principles.md),
-[ledger](../_shared/ledger.md), [runtime](../_shared/runtime.md),
+[ledger](../_shared/ledger.md), [memory](../_shared/memory.md) (`../_shared/ansh-memory`), [runtime](../_shared/runtime.md),
 [stacking](../_shared/stacking.md), [tickets](../_shared/tickets.md), [packet template](references/packet.md),
 [plan.json](references/plan-json.md), `effort-dial`, `gold-star`, `lightweight-sql`,
 `/ansh-small-loop`, `/ansh-loop`.
@@ -29,6 +29,8 @@ sloppy plan makes every later round more expensive.
    - Read the code deeply. Fan out `Explore` subagents over the subsystems, naming conventions and
      prior art. For each area the work touches, find the existing code to mirror: the gold-star.
      You can't write a packet for code you haven't read.
+   - Read project memory per [memory](../_shared/memory.md) with the goal text, then each area
+     it touches. Step 5 folds what applies into the packets.
 
 2. **Phase 0: milestones and TDD checks.**
    - With a TDD: number AC, FM, D, Q and M IDs per [milestones](../_shared/milestones.md). Find the
@@ -76,6 +78,8 @@ sloppy plan makes every later round more expensive.
    - **Gold-star found**: a `file:line` to mirror and why. Point at the slice of a `gold-star`
      reference when the goal has one.
    - **No open questions.** Each is answered, settled by a run, or an agent default.
+   - **Memory folded in**: each project memory that applies is in Watch out for or Tests to
+     write, citing its id.
    - **Edge cases written** into Watch out for and Tests to write: boundaries, empty, null and
      missing inputs, concurrency and ordering, timezone and DST, pagination, permissions, partial
      failure, idempotency and retries, large inputs.
@@ -124,7 +128,7 @@ sloppy plan makes every later round more expensive.
 A specialist never changes direction. It appends to `discoveries.md` and returns `NEEDS_REPLAN`.
 Loops also send you architectural REVISE findings and tasks that hit the iteration cap.
 
-1. Read `discoveries.md` and the packet.
+1. Read `discoveries.md`, the packet, and project memory for the area it hit.
 2. Fold what was found into `plan.md` and the affected packets.
 3. Mechanical gap (a path, a gold-star, a check you can settle from code): fix the packet and
    re-stamp. Change of direction: settle it by running something, else take an agent default.

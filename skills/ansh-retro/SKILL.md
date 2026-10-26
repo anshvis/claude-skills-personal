@@ -8,7 +8,7 @@ description: Read the /ansh iteration ledger and stage small, measured edits to 
 **Goal:** cut what doesn't change outcomes and fix what keeps costing rounds, with the numbers behind each edit.
 
 **Uses:** [ledger](../_shared/ledger.md), [autonomy](../_shared/autonomy.md), [principles](../_shared/principles.md),
-[runtime](../_shared/runtime.md), `/ansh-correct`, `/ansh-verify`, `/chill-describe`, the scorer
+[runtime](../_shared/runtime.md), [memory](../_shared/memory.md) (`../_shared/ansh-memory`), `/ansh-correct`, `/ansh-verify`, `/chill-describe`, the scorer
 reports (`~/.agentic-workflow/scorer/reports/<date>.md`).
 
 ## Steps
@@ -41,12 +41,16 @@ reports (`~/.agentic-workflow/scorer/reports/<date>.md`).
 5. **Write proposals.** Each one: the edit, the file, the numbers behind it, the metric it should
    move and in which direction. Prefer deletion. Prefer gating a phase on risk over adding a new one.
    An edit must keep every shared doc the single owner of its rule.
-6. **Stage, don't apply.** In `~/claude-skills-personal`, add a worktree off `origin/main` at
-   `../claude-skills-personal-retro-<date>` on a local branch `ansh-retro-<date>`. Never switch or
+6. **Stage, don't apply.** In `~/personal-skills`, add a worktree off `origin/main` at
+   `../personal-skills-retro-<date>` on a local branch `ansh-retro-<date>`. Never switch or
    edit the live checkout. One small commit per proposal, written per `/chill-describe`. Don't
    push the branch. Stop and report. When Ansh says go, rebase it onto `origin/main`, push straight
    to `main` (this repo doesn't use PRs), and remove the worktree.
-7. **Save and log.** Write the report to `~/.agentic-workflow/ansh/retros/<date>.md`. Log
+7. **Memory queue.** Work `ansh-memory pending` per [memory](../_shared/memory.md#review):
+   approve, reject or correct each candidate. Save a `workflow` or `convention` memory for each
+   repo-level pattern the metrics show. List stale memories, including classes `/ansh-correct`
+   turned into checks. This is local, so it doesn't wait for Ansh.
+8. **Save and log.** Write the report to `~/.agentic-workflow/ansh/retros/<date>.md`. Log
    `ansh-log ansh-retro report DONE --note "<k> proposals"`.
 
 ## Edge cases
@@ -74,6 +78,7 @@ Last retro: <proposal -> metric moved | flat | worse>
 Metrics: <table, n beside every number>
 Proposals: <edit> | <file> | <numbers> | should move <metric> <direction>
 Handed to /ansh-correct: <class, count>
+Memory: <approved n, rejected n, corrected n, stale ids>
 Staged: <worktree path, commit count>
 ```
 
