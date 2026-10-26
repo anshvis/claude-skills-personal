@@ -53,6 +53,15 @@ debugging and review read lessons from earlier runs, and verified root causes an
 corrections are saved back. Rules in [memory](skills/_shared/memory.md). Memory lives in
 `~/.beacon/`, per machine, and is never committed here.
 
+Nightly drafts from every session: store a Jev key in the keychain, then re-run setup. It
+schedules `beacon/evaluate.sh` daily at 03:00 (log in `~/.local/state/ansh-skills/beacon-eval.log`).
+This sends session traces to Jev.
+
+```bash
+security add-generic-password -U -a "$USER" -s ansh-jev-api-key -w   # prompts for the key
+./setup.sh
+```
+
 ## Install as a plugin (Claude Code Web)
 
 ```

@@ -54,6 +54,11 @@ passes `--task <id>`; `/ansh-pr-loop` approves those drafts when that task's PR 
 | An agent default merged and I never corrected it | `/ansh-pr-loop` on merge | `convention` | no: `/ansh-retro` approves it if still uncorrected |
 | A pattern across runs in this repo, good or bad (what passes first try, what always costs rounds) | `/ansh-retro` | `workflow` or `convention` | yes |
 
+**Every session, nightly.** `beacon/evaluate.sh` runs at 03:00 (scheduled by `setup.sh` when the
+keychain item `ansh-jev-api-key` exists). The Jev evaluator reads the day's sessions from every
+harness, `/ansh` or not, and writes drafts scoped to each session's repo. They are never approved
+automatically: `/ansh-retro` works them like any other draft. This sends session traces to Jev.
+
 A lesson is worth saving only if a future agent in this repo would act differently because of it:
 skip the obvious, keep the new.
 
