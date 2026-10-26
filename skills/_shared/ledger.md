@@ -51,3 +51,4 @@ time, repo, branch, head SHA and cwd. A failed log write never fails the skill: 
 | `/ansh-retro` | report written (proposal count) |
 | `/ansh-think`, `/ansh-save` | done |
 | any | `escaped` when I correct something verification passed |
+| any that saves memory | `memory DONE` with the memory or candidate id ([memory](memory.md)) |

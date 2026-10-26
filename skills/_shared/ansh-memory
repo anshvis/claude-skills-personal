@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+# Read and write Beacon project memory for /ansh skills. Never fails the caller: problems go to
+# stderr, exit 0. Rules for when to read, write and approve live in memory.md next to this file.
+#
+# usage:
+#   ansh-memory context [--kind K] [--limit N] "<task or symptom>"
+#   ansh-memory save --kind K --title T --body B [--applicability A] [--tag T] [--approve] [--reason R]
+#   ansh-memory pending [--limit N]
+set -uo pipefail
+
+note() { echo "ansh-memory: $*" >&2; }
+command -v beacon > /dev/null 2>&1 || { note "beacon not installed, skipped (run setup.sh)"; exit 0; }
+command -v jq > /dev/null 2>&1 || { note "jq missing, skipped"; exit 0; }
+
+# Scope memory to the repo, not the worktree: every worktree of a repo shares one memory.
+project="$PWD"
+if common="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"; then
+  case "$common" in */.git) project="${common%/.git}" ;; *) project="$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")" ;; esac
+fi
+
+# The trace this lesson came from: the current session's newest trace in Beacon's runtime log.
+current_trace() {
+  local sid="${CLAUDE_CODE_SESSION_ID:-${CLAUDE_SESSION_ID:-${CODEX_THREAD_ID:-${CODEX_SESSION_ID:-}}}}"
+  local logs=(~/.beacon/endpoint/logs/runtime.jsonl ~/.beacon/endpoint/logs/runtime.jsonl.1)
+  local t=""
+  if [ -n "$sid" ]; then
+    t="$(tail -n 20000 "${logs[@]}" 2>/dev/null | grep -F "$sid" | jq -r --arg s "$sid" 'select(.session.id? == $s) | .trace.id // empty' 2>/dev/null | tail -1)"
+  fi
+  [ -n "$t" ] || t="$(tail -n 5000 "${logs[0]}" 2>/dev/null | jq -r --arg p "$project" --arg c "$PWD" \
+    'select((.repository // "") as $r | $r != "" and ($r | startswith($p) or startswith($c))) | .trace.id // empty' 2>/dev/null | tail -1)"
+  [ -n "$t" ] || t="$(tail -n 200 "${logs[0]}" 2>/dev/null | jq -r '.trace.id // empty' 2>/dev/null | tail -1)"
+  printf '%s' "$t"
+}
+
+cmd="${1:-}"; shift || true
+case "$cmd" in
+  context)
+    kind=""; limit=8; query=""
+    while [ "$#" -gt 0 ]; do
+      case "$1" in
+        --kind) kind="${2:-}"; shift 2 ;;
+        --limit) limit="${2:-8}"; shift 2 ;;
+        *) query="${query:+$query }$1"; shift ;;
+      esac
+    done
+    args=(memory list --project "$project" --limit "$limit" --json)
+    [ -n "$kind" ] && args+=(--kind "$kind")
+    [ -n "$query" ] && args+=(-q "$query")
+    out="$(beacon "${args[@]}" 2>/dev/null)" || { note "memory list failed"; exit 0; }
+    printf '%s' "$out" | jq -r '[.. | objects | select(.id? and .title? and .body?)] | unique_by(.id) | .[]
+      | "- [\(.kind)] \(.title) (\(.id))\n  when: \(.applicability // "-")\n  \(.body | gsub("\n"; "\n  "))"' 2>/dev/null
+    ;;
+  save)
+    kind=""; title=""; body=""; applicability=""; approve=0; reason="ansh skill"; tags=()
+    while [ "$#" -gt 0 ]; do
+      case "$1" in
+        --kind|--title|--body|--applicability|--reason|--tag)
+          [ "$#" -ge 2 ] || { note "$1 needs a value"; exit 0; }
+          case "$1" in
+            --kind) kind="$2" ;; --title) title="$2" ;; --body) body="$2" ;;
+            --applicability) applicability="$2" ;; --reason) reason="$2" ;; --tag) tags+=(--tag "$2") ;;
+          esac
+          shift 2 ;;
+        --approve) approve=1; shift ;;
+        *) note "unknown flag $1"; exit 0 ;;
+      esac
+    done
+    { [ -n "$kind" ] && [ -n "$title" ] && [ -n "$body" ]; } || { note "save needs --kind, --title and --body"; exit 0; }
+    trace="$(current_trace)"
+    [ -n "$trace" ] || { note "no Beacon trace found for this session, not saved"; exit 0; }
+    args=(memory candidates create --json --project "$project" --trace "$trace" --kind "$kind" --title "$title" --body "$body" ${tags[@]+"${tags[@]}"})
+    [ -n "$applicability" ] && args+=(--applicability "$applicability")
+    id="$(beacon "${args[@]}" 2>/dev/null | jq -r '.id // empty' 2>/dev/null)"
+    [ -n "$id" ] || { note "candidate create failed"; exit 0; }
+    if [ "$approve" -eq 1 ]; then
+      beacon memory candidates approve "$id" --project "$project" --reason "$reason" > /dev/null 2>&1 \
+        && echo "approved $id" || { note "approve failed, left as candidate $id"; }
+    else
+      echo "candidate $id"
+    fi
+    ;;
+  pending)
+    limit=50
+    [ "${1:-}" = --limit ] && limit="${2:-50}"
+    beacon memory candidates list --project "$project" --state candidate --limit "$limit" --json 2>/dev/null \
+      | jq -r '[.. | objects | select(.id? and .title? and .state? == "candidate")] | unique_by(.id) | .[]
+        | "- \(.id) [\(.kind)] \(.title)\n  when: \(.applicability // "-")\n  \(.body | gsub("\n"; "\n  "))"' 2>/dev/null
+    ;;
+  *)
+    note "usage: ansh-memory context|save|pending (see memory.md)" ;;
+esac
+exit 0
