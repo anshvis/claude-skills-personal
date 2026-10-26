@@ -1,4 +1,4 @@
-# ansh-personal skills
+# personal-skills
 
 Personal, provider-neutral skill sources: my `/ansh-*` skills, which take a ticket or TDD to a merged, verified PR without a human in the loop, the glue skills they call, and a few standalone helpers. `ANSH.md` is the index.
 
@@ -7,8 +7,8 @@ Public. Built for my own setup at work, so some skills assume that stack (web-ap
 ## Install for Claude Code and Codex
 
 ```bash
-git clone https://github.com/anshvis/claude-skills-personal.git ~/claude-skills-personal
-~/claude-skills-personal/setup.sh
+git clone https://github.com/anshvis/personal-skills.git ~/personal-skills
+~/personal-skills/setup.sh
 ```
 
 Defaults to Claude and Codex. Claude keeps the complete existing skill catalog under
@@ -37,20 +37,33 @@ lifecycle; this local setup does not upload or publish the private repository.
 [Runtime compatibility](skills/_shared/runtime.md) defines capability-based tool/model routing,
 independent review and execution when Workflow is absent. Model profiles are recommendations;
 a skill never changes the current model by declaring a tier. Missing services or a required
-fresh-review capability are reported explicitly. No hooks, tmux, `/meta`, provider defaults or
-new service connections are installed by this setup.
+fresh-review capability are reported explicitly. No tmux, `/meta` or provider defaults are
+installed by this setup.
+
+## Beacon (project memory)
+
+`setup.sh` also runs `beacon/setup.sh` (skip it with `--no-beacon`). It installs
+[Beacon](https://github.com/asymptote-labs/agent-beacon) from the release tarball (checksum
+verified) into `~/.local/bin`, starts its local collector with Claude and Codex hooks, and
+registers its MCP server as `aw-beacon` for both. Everything stays on the machine: it never signs
+in or connects to Beacon Cloud.
+
+The `/ansh` skills use it as project memory through `skills/_shared/ansh-memory`: planning,
+debugging and review read lessons from earlier runs, and verified root causes and reviewer
+corrections are saved back. Rules in [memory](skills/_shared/memory.md). Memory lives in
+`~/.beacon/`, per machine, and is never committed here.
 
 ## Install as a plugin (Claude Code Web)
 
 ```
-/plugin marketplace add anshvis/claude-skills-personal
+/plugin marketplace add anshvis/personal-skills
 /plugin install ansh-personal@ansh-personal-skills
 ```
 
 Skills are namespaced under the plugin, e.g. `/ansh-personal:ansh-loop`.
 
 ## Caveats
-- The iteration ledger (`skills/_shared/ansh-log`) needs `jq`. Without it, events are skipped with a warning and nothing else breaks.
+- The iteration ledger (`skills/_shared/ansh-log`) and memory helper (`skills/_shared/ansh-memory`) need `jq`. Without it, or without Beacon, they skip with a warning and nothing else breaks.
 - Namespacing: skills that call each other by bare name (e.g. `/ansh-plan`) may need the `ansh-personal:` prefix.
 - On Claude Code Web, plugin sub-agents and hooks are limited (fully supported in Desktop/Cowork), so the loop is degraded there.
 - The loop's `.ansh/` scratch state is per-machine/sandbox and does not sync.

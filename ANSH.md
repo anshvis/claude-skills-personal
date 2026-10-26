@@ -16,6 +16,7 @@ Runs on Claude Code (`/ansh-plan`) and Codex (`$ansh-plan`). See [runtime](skill
 | [milestones](skills/_shared/milestones.md) | The `Implementation milestones` section added to web-app's spec-doc TDDs |
 | [principles](skills/_shared/principles.md) | The engineering bar (from pstack) |
 | [ledger](skills/_shared/ledger.md) | Iteration events via `ansh-log` |
+| [memory](skills/_shared/memory.md) | Project memory in Beacon via `ansh-memory`: who reads it, who saves what, what gets approved |
 | [stacking](skills/_shared/stacking.md) | PR topology, branch bases, merge order, never rewriting shared branches |
 | [worktrees](skills/_shared/worktrees.md) | One worktree per work item, never leaving verified work uncommitted |
 | [tickets](skills/_shared/tickets.md) | Branch names, PR link words, Linear status ownership |
@@ -39,7 +40,7 @@ Runs on Claude Code (`/ansh-plan`) and Codex (`$ansh-plan`). See [runtime](skill
 | [`/ansh-resolve`](skills/ansh-resolve/SKILL.md) | One pass over a PR's CI failures, comments and gate findings. The only skill that fixes PR findings. |
 | [`/ansh-pr-loop`](skills/ansh-pr-loop/SKILL.md) | Babysit one PR: gate, resolve until mergeable, prove the head, merge under the merge rule. |
 | [`/ansh-correct`](skills/ansh-correct/SKILL.md) | Turn a repeated mistake into a lint, type or CI check. PRs wait for my review. |
-| [`/ansh-retro`](skills/ansh-retro/SKILL.md) | Read the ledger and propose cuts to these skills, with the numbers. |
+| [`/ansh-retro`](skills/ansh-retro/SKILL.md) | Read the ledger, propose cuts to these skills with the numbers, and work the memory queue. |
 | [`/ansh-think`](skills/ansh-think/SKILL.md) | Options and tradeoffs to a recommendation. No code. |
 | [`/ansh-save`](skills/ansh-save/SKILL.md) | Freeze in-flight state so another session can resume it. |
 
@@ -62,7 +63,8 @@ shallow ask deeper before planning). From agentic-workflow: `ui-evidence`, `veri
   -> /ansh-ship
        -> per PR: /ansh-pr-loop <n>
             -> /ansh-review pr <n> -> /ansh-resolve <n> -> /ansh-verify run -> merge | park
-weekly: /ansh-retro (skills) and /ansh-correct (repo checks)
+memory: plan, debug and review read it; debug, resolve, cycle, verify and backend save to it
+weekly: /ansh-retro (skills, memory queue) and /ansh-correct (repo checks)
 ```
 
 ## State
@@ -70,6 +72,8 @@ weekly: /ansh-retro (skills) and /ansh-correct (repo checks)
 - `.ansh/` in the repo (git-excluded): `plan.md`, `plan.json`, `tasks/<id>.md`, `discoveries.md`,
   `decisions.md`.
 - `~/.agentic-workflow/ansh/events.jsonl`: the iteration ledger.
+- Beacon project memory (`~/.beacon/endpoint/memory.db`), one per repo: lessons that outlive a run.
+  Installed by `setup.sh`, local only.
 - `~/.agentic-workflow/<repo-slug>/feature-map/` and `evidence/`: local, not committed.
 - `~/.agentic-workflow/ansh-pr-loop/outcomes.jsonl`: merge outcomes.
 
