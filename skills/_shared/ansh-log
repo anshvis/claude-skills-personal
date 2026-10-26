@@ -44,7 +44,7 @@ line="$(jq -cn \
   --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   --arg skill "$skill" --arg phase "$phase" --arg verdict "$verdict" \
   --arg repo "$repo" --arg branch "$branch" --arg sha "$sha" --arg cwd "$PWD" \
-  --arg session "${CLAUDE_SESSION_ID:-${CODEX_SESSION_ID:-}}" \
+  --arg session "${CLAUDE_CODE_SESSION_ID:-${CLAUDE_SESSION_ID:-${CODEX_THREAD_ID:-${CODEX_SESSION_ID:-}}}}" \
   --argjson extra "$extra" \
   '{ts:$ts, skill:$skill, phase:$phase, verdict:$verdict, repo:$repo, branch:$branch, sha:$sha, cwd:$cwd, session:$session} + $extra')" \
   || { echo "ansh-log: could not build event" >&2; exit 0; }
