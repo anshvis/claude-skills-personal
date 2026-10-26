@@ -63,19 +63,9 @@ You conduct. Planning, code and review each run in their own skill.
   after the parent and linked `Closes <PARENT>`. The work lands as small section PRs into the
   integration branch, small-first in dependency order. A section PR doesn't have to ship against
   `main` alone. Size test: more than ~8-10 files or mixed layers means split it.
-- **PR linking.** Each PR links every ticket its own diff advances, one line each:
-  - `Closes <ID>` for a ticket it finishes (its last or only PR). `Part of <ID>` for one it
-    advances. Never invent ticket numbers.
-  - The branch is named off the PR's primary ticket. A parent-named branch stacks every section
-    onto the parent in Linear.
-  - The parent is plain text on section PRs ("parent REV-1157"). Link it only on the parent's own
-    work: a ticket with no children, or the umbrella.
-  - In a stack, link only what this PR's own commits do. Name dependency PRs as `Depends on #<n>`.
-- **Branches.** Never push to `main`/`master`. Work on the branches the plan names.
+- **Branches, PR links and ticket status** follow [tickets](../_shared/tickets.md).
 - **`.ansh/` stays local.** Use the local exclude from `/ansh-plan` step 6, never the tracked
   `.gitignore`. Same for any agent scratch.
-- **Linear status.** The planner and specialist move tickets to In Progress. The GitHub
-  integration owns In Review and Done. Never set those by hand.
 
 ## Edge cases
 

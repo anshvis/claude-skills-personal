@@ -10,7 +10,7 @@ description: "Turn a TDD, Linear ticket or prose goal into milestones and self-c
 **Uses:** [autonomy](../_shared/autonomy.md), [verification](../_shared/verification.md),
 [milestones](../_shared/milestones.md), [principles](../_shared/principles.md),
 [ledger](../_shared/ledger.md), [runtime](../_shared/runtime.md),
-[stacking](../_shared/stacking.md), [packet template](references/packet.md),
+[stacking](../_shared/stacking.md), [tickets](../_shared/tickets.md), [packet template](references/packet.md),
 [plan.json](references/plan-json.md), `effort-dial`, `gold-star`, `lightweight-sql`,
 `/ansh-small-loop` (PR topology and linking), `/ansh-loop`.
 
@@ -25,8 +25,7 @@ sloppy plan makes every later round more expensive.
      Find the TDD from links on the ticket, its parents, or the project's documents.
    - Project or several tickets: fetch each. Keep IDs, titles and statuses.
    - Prose goal: use it as is. No Linear calls.
-   - Move each in-scope ticket that is triage, backlog or unstarted to In Progress
-     (`statusType="started"` from `list_issue_statuses`, then `save_issue`).
+   - Move each in-scope ticket to In Progress per [tickets](../_shared/tickets.md).
    - Read the code deeply. Fan out `Explore` subagents over the subsystems, naming conventions and
      prior art. For each area the work touches, find the existing code to mirror: the gold-star.
      You can't write a packet for code you haven't read.
@@ -68,14 +67,9 @@ sloppy plan makes every later round more expensive.
      to one PR, write in `plan.md` why the layers can't be cut. Several PRs use the integration
      topology in `/ansh-small-loop`. Record each PR's `base` per stacking.
    - When the goal has tickets, every code task names one. Untracked work is pure scaffolding only;
-     note it in `plan.md`. A prose goal has no tickets: branches are `ansh-<slug>` and `links` is empty.
-   - Branches are `<tag-lower>-<slug>`: the tag of the PR's primary ticket (its `Closes` ticket,
-     else its main `Part of`), lowercased, plus 3-6 specific kebab-case words from the title. Strip
-     filler ("fix", "the", "issue with"). Lowercase ASCII and hyphens. Examples:
-     `rev-669-availability-request-integration`, `rev-75-add-tag-to-edit-shift-sidebar`. Use the
-     parent's tag only for the parent's own work. Never invent a non-ticket name when a ticket
-     exists.
-   - Write `prs[].links` per the linking rule in `/ansh-small-loop`, so no loop has to infer them.
+     note it in `plan.md`.
+   - Name every branch and write every `prs[].links` entry per [tickets](../_shared/tickets.md), so
+     no later skill has to infer them.
 
 5. **Make each packet ready.** A task leaves the planner only when all of these hold:
    - **Files named**, with what changes in each. Find them now.

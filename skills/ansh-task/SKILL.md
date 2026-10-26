@@ -9,7 +9,7 @@ description: "Turn one task packet from .ansh/tasks/ into the smallest diff that
 
 **Uses:** [runtime](../_shared/runtime.md), [autonomy](../_shared/autonomy.md),
 [verification](../_shared/verification.md), [principles](../_shared/principles.md),
-[stacking](../_shared/stacking.md), [worktrees](../_shared/worktrees.md), [ledger](../_shared/ledger.md) (`../_shared/ansh-log`),
+[stacking](../_shared/stacking.md), [worktrees](../_shared/worktrees.md), [tickets](../_shared/tickets.md), [ledger](../_shared/ledger.md) (`../_shared/ansh-log`),
 [/ansh-verify](../ansh-verify/SKILL.md), [/lightweight-sql](../lightweight-sql/SKILL.md),
 [/chill-describe](../chill-describe/SKILL.md), [/ansh-plan](../ansh-plan/SKILL.md).
 
@@ -22,10 +22,7 @@ codebase. Model and effort come from the packet stamp, routed per runtime.md.
 1. **Load the packet.** A task id reads `.ansh/tasks/<id>.md`. An inline task with explicit
    done-criteria also works. Neither: return BLOCKED, "No scoped task. Run `/ansh-plan` first."
 2. **Worktree.** Work in the item's worktree per [worktrees](../_shared/worktrees.md).
-3. **Ticket to In Progress.** If the packet has a Linear ticket section, check each of the packet's
-   own tickets (not the parent). `triage`, `backlog` or `unstarted` -> In Progress (find
-   `statusType="started"` with `list_issue_statuses`, then `save_issue`). Already started or later:
-   leave it. Never set In Review or Done. A Linear failure is a note, not a stop.
+3. **Ticket to In Progress.** Move the packet's own tickets per [tickets](../_shared/tickets.md).
 4. **Base.** Run stacking.md "Before starting work": fetch, take the base from
    `plan.json.prs[].base`, cut from `origin/<base>` or merge it in, confirm the dependency's code is
    present. Merge, never rebase or force-push.
@@ -55,14 +52,6 @@ codebase. Model and effort come from the packet stamp, routed per runtime.md.
     `ansh-log ansh-task done NEEDS_REPLAN --task <id> --reason <reason>`. Return NEEDS_REPLAN. The
     orchestrator routes it to `/ansh-plan`, which resolves it without me per autonomy.md.
 
-## PR ticket links
-
-- `Closes <ID>` for each ticket this PR's own diff finishes. `Part of <ID>` for each it advances.
-- Never link tickets of dependency branches merged under it. Write `Depends on #<n>` instead.
-- The parent ticket is plain text only.
-- Name the branch off the PR's primary ticket (`<tag-lower>-<slug>`).
-- After opening, confirm each linked ticket shows the PR.
-
 ## Edge cases
 
 | case | do |
@@ -80,7 +69,6 @@ codebase. Model and effort come from the packet stamp, routed per runtime.md.
 | Tool or environment failure (not scope) | BLOCKED with what's missing. |
 | Merge from `origin/<base>` landed after verification | Re-run `/ansh-verify run` before pushing. |
 | Commit or diff stat shows another section's work | Wrong base. Fix the base before opening the PR. |
-| Linear unavailable | Skip the status flip with a note. Keep going. |
 | Verification would need prod writes, deploy or infra apply | Never do it. Verify on local or a branch database. Park per autonomy.md if that's impossible. |
 
 Never change direction. Don't guess a new approach, expand scope to "just handle it", or patch

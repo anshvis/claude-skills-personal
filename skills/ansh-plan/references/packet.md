@@ -10,12 +10,9 @@ its own: don't assume the reader saw `plan.md`.
 M1 - <name>. Covers: AC-1, FM-2. Surface: invisible (no screen reads these rows).
 
 ## Linear ticket
-- Ticket: REV-73. PR `PR1` on branch `rev-73-<section-slug>`, base `<base>`, carries
-  `Closes REV-73` if it's the ticket's last PR, else `Part of REV-73`. One line per other ticket
-  the PR advances. Parent REV-1157 in plain text only. Dependency PRs as `Depends on #<n>`,
-  without their tickets.
-- On pickup, move this ticket to In Progress if it's triage, backlog or unstarted. Never set In
-  Review or Done.
+- Ticket: REV-73 (parent REV-1157). PR `PR1` on branch `rev-73-<section-slug>`, base `<base>`,
+  links `Closes REV-73`.
+- Branch, links and status follow [tickets](../../_shared/tickets.md).
 
 ## Objective
 <one or two sentences: what done looks like for this slice>

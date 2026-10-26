@@ -58,16 +58,12 @@ The machine index the loops read. `/ansh-plan` writes it. Loops and `/ansh-task`
 - `acceptance_criteria` holds the AC-n list, numbered and binary. `inferred: true` marks ones the
   planner derived. Don't repeat them per task: a task's `covers` and its packet's Verification are
   its bar.
-- `parent_ticket` is context, status and the umbrella PR's link. Section PRs mention it in plain
-  text and never magic-word link it.
-- `prs[].links` lists every ticket that PR's own diff advances: `Closes` when it's the ticket's last
-  PR, `Part of` otherwise. Every child ticket appears in at least one PR's links and in exactly one
-  `Closes`. Leave out tickets that only arrive through a dependency branch.
+- `parent_ticket` is context, status and the umbrella PR's link.
+- `prs[].links` and every branch name follow [tickets](../../_shared/tickets.md). A ticketless goal
+  has empty `links`.
 - `prs[].depends_on` lists the PR ids this one stacks on or merges. They render as `Depends on #<n>`.
 - `prs[].base` follows [stacking](../../_shared/stacking.md). Single-PR plan: `base` is `main`,
   `integration_branch` is null, and `branch_suggestion` is the only branch.
-- Every branch is `<tag-lower>-<slug>` off the PR's primary ticket (its `Closes` ticket, else its
-  main `Part of`).
 - `linear_ticket` is a string or array. A PR's `links` cover the `linear_ticket`s of its subtasks.
   Omit it only for untracked scaffolding noted in `plan.md`.
 - `autonomy` is `full` on every task. `parked_at_merge: true` on a task, its PR and its milestone
