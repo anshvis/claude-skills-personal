@@ -11,7 +11,8 @@ description: "Turn one task packet from .ansh/tasks/ into the smallest diff that
 [verification](../_shared/verification.md), [principles](../_shared/principles.md),
 [stacking](../_shared/stacking.md), [worktrees](../_shared/worktrees.md), [tickets](../_shared/tickets.md), [ledger](../_shared/ledger.md) (`../_shared/ansh-log`),
 [/ansh-verify](../ansh-verify/SKILL.md), [/lightweight-sql](../lightweight-sql/SKILL.md),
-[/chill-describe](../chill-describe/SKILL.md), [/ansh-plan](../ansh-plan/SKILL.md).
+[/chill-describe](../chill-describe/SKILL.md), [/ansh-plan](../ansh-plan/SKILL.md),
+[/ansh-ship](../ansh-ship/SKILL.md).
 
 The packet is your whole world. Read `.ansh/tasks/<id>.md` (index `.ansh/plan.json`) and the docs
 it cites (`.ansh/plan.md`, `handoffs/*.md`). Don't read the planner's reasoning. Don't survey the
@@ -43,9 +44,8 @@ codebase. Model and effort come from the packet stamp, routed per runtime.md.
    and the surface path in verification.md. Write the evidence pack. Every done-criterion gets
    met or not met with evidence (command + result). Log
    `ansh-log ansh-task done DONE --task <id> --attempt <n> --surface <surface>`.
-10. **Push.** Any change after verification is a new commit and a new verify. Before any push or PR, run stacking.md "Before pushing or opening a PR": merge
-    `origin/<base>` again and re-verify, check `git log origin/<base>..HEAD` and the diff stat hold
-    only this section, open with `--base <base>`.
+10. **Stop at the verified commit.** Any change after verification is a new commit and a new
+    verify ([worktrees](../_shared/worktrees.md)). Don't push or open a PR: `/ansh-ship` does.
 11. **Kick back** when scope is wrong (see Edge cases). Append to `.ansh/discoveries.md`: the task,
     what you found, the specific gap, why it blocks. Describe the problem. Don't propose and apply
     a fix. Set the task's `status` to `needs_replan` in `.ansh/plan.json`. Log
@@ -67,15 +67,13 @@ codebase. Model and effort come from the packet stamp, routed per runtime.md.
 | Packet's model looks too weak mid-task | Escalate per runtime.md. Log it to `.ansh/decisions.md`. |
 | Dependency code missing, or base not named in the plan | BLOCKED. Don't rebuild the missing piece. |
 | Tool or environment failure (not scope) | BLOCKED with what's missing. |
-| Merge from `origin/<base>` landed after verification | Re-run `/ansh-verify run` before pushing. |
-| Commit or diff stat shows another section's work | Wrong base. Fix the base before opening the PR. |
 | Verification would need prod writes, deploy or infra apply | Never do it. Verify on local or a branch database. Park per autonomy.md if that's impossible. |
 
 Never change direction. Don't guess a new approach, expand scope to "just handle it", or patch
 around an unknown. Direction belongs to `/ansh-plan`.
 
 Out of scope here: planning questions, the independent review (`/ansh-review` reruns your checks),
-shipping, and any Linear edit beyond In Progress (no comments, relations or later states).
+pushing and PRs (`/ansh-ship`), and any Linear edit beyond In Progress.
 
 ## Output
 

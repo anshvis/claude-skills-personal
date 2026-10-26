@@ -1,7 +1,9 @@
 # `.ansh/plan.json`
 
-The machine index the loops read. `/ansh-plan` writes it. Loops and `/ansh-task` update `status`,
-`merge_state`, and `prs[].base` when a stack is retargeted (stacking). Nothing else.
+The machine index the loops read. `/ansh-plan` writes it. Other skills update only these fields:
+`/ansh-cycle` sets `status`, `rounds` and `replans`; `/ansh-task` sets `status: needs_replan`;
+`/ansh-ship` sets `prs[].number` and `merge_state`; `/ansh-pr-loop` sets `merge_state` and
+`prs[].base` when a stack is retargeted (stacking).
 
 ```json
 {
@@ -40,13 +42,15 @@ The machine index the loops read. `/ansh-plan` writes it. Loops and `/ansh-task`
     { "id": "PR1", "milestone": "M1", "branch": "rev-73-tag-rules-engine",
       "base": "rev-1157-payrule-thresholds",
       "links": [{ "ticket": "REV-73", "word": "Closes" }, { "ticket": "REV-77", "word": "Part of" }],
-      "depends_on": [], "subtasks": ["T1", "T2"], "parked_at_merge": false, "merge_state": "todo" }
+      "depends_on": [], "subtasks": ["T1", "T2"], "parked_at_merge": false, "merge_state": "todo",
+      "number": null }
   ],
   "subtasks": [
     { "id": "T1", "title": "...", "milestone": "M1", "tier": "standard", "model": "gpt-6.1-sol",
       "effort": "high", "deps": [], "fresh_eyes": "independent", "surface": "invisible",
       "covers": ["AC-1"], "autonomy": "full", "parked_at_merge": false,
-      "linear_ticket": "REV-73", "pr": "PR1", "packet": ".ansh/tasks/T1.md", "status": "todo" }
+      "linear_ticket": "REV-73", "pr": "PR1", "packet": ".ansh/tasks/T1.md", "status": "todo",
+      "rounds": 0, "replans": 0 }
   ]
 }
 ```
@@ -69,4 +73,8 @@ The machine index the loops read. `/ansh-plan` writes it. Loops and `/ansh-task`
 - `autonomy` is `full` on every task. `parked_at_merge: true` on a task, its PR and its milestone
   when the milestone has an irreversible rollout step or its merge destroys or rewrites data.
 - `status`: `todo`, `in_progress`, `needs_replan`, `done`, `parked`.
+- `rounds` counts a task's REVISE, DEBUG and NEEDS_REPLAN results; `replans` counts the
+  `/ansh-plan` re-entries that bought more rounds. The budget is in
+  [autonomy](../../_shared/autonomy.md#stop-conditions).
+- `number` is the GitHub PR number once `/ansh-ship` opens it.
 - `merge_state`: `todo`, `open`, `waiting` (on a dependency), `parked`, `awaiting_approval`, `merged`.
