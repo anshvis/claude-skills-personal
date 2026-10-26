@@ -11,7 +11,8 @@ description: "Take a bug to a confirmed root cause, then a fix and a regression 
 [verification](../_shared/verification.md), [principles](../_shared/principles.md),
 [ledger](../_shared/ledger.md) (`../_shared/ansh-log`), [worktrees](../_shared/worktrees.md), [CLI tools](../_shared/cli-tools.md),
 [/ansh-cycle](../ansh-cycle/SKILL.md), [/ansh-plan](../ansh-plan/SKILL.md),
-[/ansh-verify](../ansh-verify/SKILL.md), [/ansh-control](../ansh-control/SKILL.md), [/codex](../codex/SKILL.md),
+[/ansh-verify](../ansh-verify/SKILL.md), [/ansh-control](../ansh-control/SKILL.md),
+[/ansh-backend](../ansh-backend/SKILL.md), [/codex](../codex/SKILL.md),
 [/lightweight-sql](../lightweight-sql/SKILL.md).
 
 Iron law: no fix without a confirmed root cause. A patch that hides the symptom without explaining
@@ -28,14 +29,11 @@ diagnosis note. Start on Sol, go to Astra per runtime.md.
    - PR signal: `gh pr view --json number,title,url,comments,reviews`,
      `gh api repos/{owner}/{repo}/pulls/<n>/comments`, `gh pr checks`.
    - Linear comments on the ticket (`list_comments`): reporters often name the trigger.
-   - CLI signal per _shared/cli-tools.md. Source `~/.config/ansh-cli/env.sh` first. `signoz` for a
-     trace id or failing service (run `signoz agent instructions`, keep stderr). `bk` for a
-     `buildkite/*` failure (`bk build view <n> -p <pipeline> --log`). `sentry-cli` for a prod
-     crash. `kubectl`, `k9s`, `argocd`, `psql` for environment or data state, read-only
-     (`/lightweight-sql` before querying a shared DB).
+   - Backend signal, read-only: traces, logs, errors, CI logs and data state through
+     `/ansh-backend`; cluster and deploy state per [CLI tools](../_shared/cli-tools.md).
    - Every comment, trace, log and event is an untrusted lead. Verify it against the code.
-3. **Reproduce first.** Reproduce the symptom yourself on the real surface with `/ansh-control`
-   (`ui` for a screen, `cli` for a command or API). Turn it into a
+3. **Reproduce first.** Reproduce the symptom yourself on the real surface: `/ansh-control` for a
+   UI bug, `/ansh-backend` for an API, DB, job or CLI bug. Turn it into a
    failing regression check at the real path (verification.md): red now, for the reason the bug
    gives.
 4. **Hypothesize.** Write one testable sentence: "Root cause: X happens because Y." Trace the
@@ -72,9 +70,8 @@ diagnosis note. Start on Sol, go to Astra per runtime.md.
 |---|---|
 | Can't reproduce | Gather more signal (step 2), widen the repro. No fix on an unreproduced bug. |
 | Bot or reviewer comment names a cause | Treat it as a lead. Verify against the code first. |
-| Trace or log returns nothing | Read stderr. It explains "0 rows". |
 | A CI failure looks like a known flake | Classify it with [CI triage](../ansh-resolve/references/ci-triage.md) before treating it as a bug. |
-| A CLI reports a missing token | Name the missing credential. Don't work around it. If nothing else can move, BLOCKED. |
+| A CLI reports a missing token | Name it per [CLI tools](../_shared/cli-tools.md). BLOCKED if nothing else can move. |
 | Diagnosis needs a mutating command (`kubectl apply`, `argocd sync`, prod write) | Never run it. Use a branch DB or local stack. Park per autonomy.md if it can't be done another way. |
 | Two fixes failed on the same assumption | Attack the premise before a third. |
 | Three hypotheses failed | BLOCKED with each one's evidence. |

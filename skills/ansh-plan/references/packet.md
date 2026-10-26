@@ -7,7 +7,7 @@ its own: don't assume the reader saw `plan.md`.
 # T1 - <short imperative title>
 
 ## Milestone
-M1 - <name>. Covers: AC-1, FM-2. Surface: invisible (no screen reads these rows).
+M1 - <name>. Covers: AC-1, FM-2. Surface: backend (no screen reads these rows).
 
 ## Linear ticket
 - Ticket: REV-73 (parent REV-1157). PR `PR1` on branch `rev-73-<section-slug>`, base `<base>`,
@@ -49,7 +49,7 @@ neighbours>
 - [ ] `foo.test.ts > idempotent on duplicate key`
 
 ## Verification
-Surface: invisible (no screen changes; a projector writes rows)
+Surface: backend (derived: only `packages/services` changes; a projector writes rows)
 Covers: AC-1, FM-2
 Checks:
 - AC-1: `bun test packages/.../foo.test.ts -t "rejects missing tenantId"` -> expect 422 with
@@ -67,5 +67,6 @@ tier: standard | model: gpt-6.1-sol | effort: high | fresh_eyes: independent | d
 autonomy: full | parked_at_merge: false
 ```
 
-The Verification block follows [verification](../../_shared/verification.md). Add a line telling
+The Verification block follows [verification](../../_shared/verification.md). Derive `Surface:` from
+the packet's Files to change per its [surface rule](../../_shared/verification.md#surface). Add a line telling
 the specialist to apply `lightweight-sql` when the diff touches SQL or Drizzle.

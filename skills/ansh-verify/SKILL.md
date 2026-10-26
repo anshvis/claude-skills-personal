@@ -26,7 +26,7 @@ surface. Never pick the verifier by hand.
 - Evidence: `~/.agentic-workflow/<repo-slug>/evidence/<branch>/<sha>/<task-id>/`, plus `<sha>/manifest.json`.
 
 The map stays local. Never commit it to the product repo. Propose committing it (as a PR, Ansh as
-reviewer) only when the ledger shows visible-class `escaped` events per merged visible milestone
+reviewer) only when the ledger shows `escaped` events per merged milestone with a ui half
 dropping across two retros since the map was set up. `/ansh-retro` reports that number.
 
 ## Steps

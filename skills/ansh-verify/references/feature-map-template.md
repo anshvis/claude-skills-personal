@@ -11,7 +11,7 @@ Stack recipes: [_stack.md](_stack.md)
 
 | Feature | File | Surface | Last verified |
 |---|---|---|---|
-| <name> | [<feature>.md](<feature>.md) | visible / data-visible / invisible | <sha> |
+| <name> | [<feature>.md](<feature>.md) | ui / data-visible / full-stack | <sha> |
 ```
 
 ## _stack.md
@@ -39,7 +39,7 @@ Ready when: <a page or log line that means usable, not just a port answering>
 # <Feature name>
 
 <one line: what the user gets from it>
-Surface: visible | data-visible | invisible
+Surface: ui | backend | data-visible | full-stack (see verification.md#surface)
 Last verified: <sha> (<date>)
 
 ## User path

@@ -14,7 +14,7 @@ Number them if the doc doesn't.
 ```
 ### M2 - <PR order step name>
 Covers: AC-3, AC-4 | FM-2, FM-5 | Depends on: M1 | Parallel with: M3
-Surface: visible | data-visible | invisible (why)
+Surface: ui | backend | data-visible | full-stack (derived, see verification.md#surface)
 
 Changes
 - Schema: <slice of Schema changes, or none>
@@ -57,7 +57,7 @@ Exit gate
 | Every AC is numbered and binary | Number it. Rewrite a vague one as Given/When/Then, mark `inferred`. |
 | Every AC is covered by some milestone | Add it to the milestone that touches its surface. |
 | Every FM row is caught by some check | Add a check to the owning milestone. |
-| Every milestone has a Surface | Classify from `Surfaces touched` and the file list. |
+| Every milestone has a Surface | Derive it from Changes and `File blast radius` per [verification](verification.md#surface). |
 | "Could pass while broken" has a real answer | Strengthen the check. |
 | Open `Q-n` items | Settle by running something, or take an agent default (see [autonomy](autonomy.md)). |
 | Irreversible rollout steps | Mark the milestone parked-at-merge. |

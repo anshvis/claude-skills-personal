@@ -83,7 +83,8 @@ sloppy plan makes every later round more expensive.
      and `Effect.fn("<Tag>.<method>")` span per method, citing STYLE.md §13,
      `services-and-layers.md` and `repo-hygiene.md`. Match the package: flat tags in legacy
      `business-logic`, `"Feature/ServiceName"` in `packages/services`. Name the sibling to copy.
-   - **Verification contract** per [verification](../_shared/verification.md): surface, covers,
+   - **Verification contract** per [verification](../_shared/verification.md): surface (derived
+     from the files per its surface rule), covers,
      red-first checks with why each fails today, a real answer to "could this pass while broken",
      regression from blast radius and callers, perf, evidence path.
    - **Self-contained**: a fresh agent could run it from the packet alone.

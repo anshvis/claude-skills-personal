@@ -26,7 +26,7 @@ reports (`~/.agentic-workflow/scorer/reports/<date>.md`).
    | Rounds to PASS per task | `/ansh-review` verdicts per `task` until the first PASS. Median, p90, max. |
    | Revise reasons | `reason` counts on `REVISE`, `DEBUG` and `/ansh-resolve` fix events. |
    | Phases that never changed the outcome | `skill` + `phase` whose verdict was always PASS across the window. Candidates to cut or gate on risk. |
-   | Escape rate by surface | `escaped` per `merged`, split by `surface`. Track visible separately (it decides when to commit the feature map, see `/ansh-verify`). |
+   | Escape rate by surface | `escaped` per `merged`, split by the four `surface` values (aliases folded in). Track milestones with a ui half separately (it decides when to commit the feature map, see `/ansh-verify`). |
    | Misclassification rate | `wrong-surface` events per reviewed milestone. |
    | Agent defaults overridden | `agent-default` events later followed by `human-correction` on the same goal or ids. |
    | Parked | `parked` count, by why. |

@@ -35,7 +35,7 @@ The machine index the loops read. `/ansh-plan` writes it. Other skills update on
     "quality_bar": "every verification contract passes at the head SHA and /ansh-review returns PASS"
   },
   "milestones": [
-    { "id": "M1", "title": "schema and migration", "surface": "invisible",
+    { "id": "M1", "title": "schema and migration", "surface": "backend",
       "covers": ["AC-1", "FM-2"], "depends_on": [], "parked_at_merge": false }
   ],
   "prs": [
@@ -47,7 +47,7 @@ The machine index the loops read. `/ansh-plan` writes it. Other skills update on
   ],
   "subtasks": [
     { "id": "T1", "title": "...", "milestone": "M1", "tier": "standard", "model": "gpt-6.1-sol",
-      "effort": "high", "deps": [], "fresh_eyes": "independent", "surface": "invisible",
+      "effort": "high", "deps": [], "fresh_eyes": "independent", "surface": "backend",
       "covers": ["AC-1"], "autonomy": "full", "parked_at_merge": false,
       "linear_ticket": "REV-73", "pr": "PR1", "packet": ".ansh/tasks/T1.md", "status": "todo",
       "rounds": 0, "replans": 0 }
@@ -72,6 +72,8 @@ The machine index the loops read. `/ansh-plan` writes it. Other skills update on
   Omit it only for untracked scaffolding noted in `plan.md`.
 - `autonomy` is `full` on every task. `parked_at_merge: true` on a task, its PR and its milestone
   when the milestone has an irreversible rollout step or its merge destroys or rewrites data.
+- `surface` on milestones and subtasks is one of the four values in
+  [verification](../../_shared/verification.md#surface), derived, never picked.
 - `status`: `todo`, `in_progress`, `needs_replan`, `done`, `parked`.
 - `rounds` counts a task's REVISE, DEBUG and NEEDS_REPLAN results; `replans` counts the
   `/ansh-plan` re-entries that bought more rounds. The budget is in

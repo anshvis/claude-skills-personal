@@ -11,7 +11,7 @@ Call the script at the end of each phase. It appends one JSON line to
 ```bash
 "<skills-root>/_shared/ansh-log" <skill> <phase> <verdict> \
   [--goal G] [--task T3] [--milestone M2] [--attempt 2] [--reason missed-edge-case] \
-  [--class repo-in-facade] [--surface visible] [--ids AC-3,FM-2] [--pr 19470] [--model gpt-6.1-sol] [--note "..."]
+  [--class repo-in-facade] [--surface ui] [--ids AC-3,FM-2] [--pr 19470] [--model gpt-6.1-sol] [--note "..."]
 ```
 
 Resolve `<skills-root>` from the skill's base directory (follow symlinks). The script fills in
@@ -25,7 +25,9 @@ time, repo, branch, head SHA and cwd. A failed log write never fails the skill: 
   `regression`, `perf`, `lint`, `types`, `ci-flake`, `ci-stale-base`, `review-comment`,
   `human-correction`, `tooling`, `scope`, `other`.
 - `merged` and `escaped` events carry `--goal`, `--milestone` and `--surface` so retro can split
-  escape rates by surface.
+  escape rates by surface. `--surface` takes the four values in
+  [verification](verification.md#surface); older `visible` and `invisible` lines read as `ui` and
+  `backend`.
 - `class` (optional): a short kebab-case name for the specific mistake, e.g. `repo-in-facade` or
   `missing-tenant-filter`. Reuse an existing name when it's the same mistake. `/ansh-correct` groups
   on it, so a class seen twice gets fixed.
