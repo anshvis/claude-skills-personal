@@ -1,17 +1,20 @@
 #!/usr/bin/env bash
-# Share ANSH source skills between hosts. No hooks, model defaults, or tmux setup.
+# Share ANSH source skills between hosts, then set up Beacon for project memory (beacon/setup.sh).
+# No model defaults or tmux setup.
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")" && pwd)"
 PROVIDERS=claude,codex
 DRY_RUN=0
+BEACON=1
 usage() {
-  echo "Usage: $0 [--providers claude,codex,cursor] [--dry-run]"
+  echo "Usage: $0 [--providers claude,codex,cursor] [--dry-run] [--no-beacon]"
 }
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --providers) [ "$#" -ge 2 ] || { usage >&2; exit 2; }; PROVIDERS="$2"; shift 2 ;;
     --dry-run) DRY_RUN=1; shift ;;
+    --no-beacon) BEACON=0; shift ;;
     --help|-h) usage; exit 0 ;;
     *) usage >&2; exit 2 ;;
   esac
@@ -89,3 +92,7 @@ PYTHON
   link "$source_root/agents" "$dest/ANSH-agents"
   echo "$provider skills ready in $dest"
 done
+
+if [ "$BEACON" -eq 1 ]; then
+  if [ "$DRY_RUN" -eq 1 ]; then "$REPO/beacon/setup.sh" --dry-run; else "$REPO/beacon/setup.sh"; fi
+fi
