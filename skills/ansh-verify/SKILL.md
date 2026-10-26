@@ -9,7 +9,7 @@ description: Own the verification harness (feature map, local stack recipes, evi
 
 **Uses:** [verification](../_shared/verification.md), [autonomy](../_shared/autonomy.md),
 [principles](../_shared/principles.md), [ledger](../_shared/ledger.md), [runtime](../_shared/runtime.md),
-[feature map template](references/feature-map-template.md), `ui-evidence`, `verify-web`, `verify-ios`,
+[feature map template](references/feature-map-template.md), [/ansh-control](../ansh-control/SKILL.md) (driving), `ui-evidence`, `verify-web`, `verify-ios`,
 `/lightweight-sql`, and the toolkit's `verification-lenses.md` and `evidence-pack.md`
 (`~/.agentic-workflow/toolkit/skills/_shared/`).
 
@@ -40,7 +40,7 @@ dropping across two retros since the map was set up. `/ansh-retro` reports that 
 3. Write one file per user-facing feature from the [template](references/feature-map-template.md).
    Start with the 3 to 5 features the open work touches. Add the rest as runs need them.
 4. Write `README.md`: one line per feature (name, file, surface, last verified SHA).
-5. Prove it: launch, doctor, drive one feature end to end with `ui-evidence`, write its evidence,
+5. Prove it: launch, doctor, drive one feature end to end with `/ansh-control` and `ui-evidence`, write its evidence,
    run cleanup, then confirm the evidence still exists. Fix and repeat until that holds. Run
    cleanup after every failed attempt too.
 6. Log `ansh-log ansh-verify setup <PASS|BLOCKED>`.
@@ -57,7 +57,7 @@ dropping across two retros since the map was set up. `/ansh-retro` reports that 
      the check (not from the diff), run it with `--app-build <sha>`. For lenses beyond functional,
      run `verify-web --yes --journey <plan>` (`verify-ios --yes` for iOS). Then the read-only data cross-check.
    - **data-visible:** the invisible checks, plus one read-only `ui-evidence` check with no write steps.
-   - **CLI or API:** the command or `curl`. Save the command, exit code, stdout and stderr.
+   - **CLI or API:** `/ansh-control cli`: the command or `curl`. Save the command, exit code, stdout and stderr.
    - **invisible:** the named tests, the DB check on a branch DB, perf (base and head, 3 runs
      each, limiter named), and the production signal firing locally.
 5. Write the pack: copy each tool's output (`summary.json`, `pack.json`, screenshots) into the

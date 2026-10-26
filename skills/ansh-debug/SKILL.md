@@ -11,7 +11,7 @@ description: "Take a bug to a confirmed root cause, then a fix and a regression 
 [verification](../_shared/verification.md), [principles](../_shared/principles.md),
 [ledger](../_shared/ledger.md) (`../_shared/ansh-log`), [CLI tools](../_shared/cli-tools.md),
 [/ansh-task](../ansh-task/SKILL.md), [/ansh-plan](../ansh-plan/SKILL.md),
-[/ansh-verify](../ansh-verify/SKILL.md), [/codex](../codex/SKILL.md),
+[/ansh-verify](../ansh-verify/SKILL.md), [/ansh-control](../ansh-control/SKILL.md), [/codex](../codex/SKILL.md),
 [/lightweight-sql](../lightweight-sql/SKILL.md).
 
 Iron law: no fix without a confirmed root cause. A patch that hides the symptom without explaining
@@ -35,7 +35,8 @@ diagnosis note. Start on Sol, go to Astra per runtime.md.
      crash. `kubectl`, `k9s`, `argocd`, `psql` for environment or data state, read-only
      (`/lightweight-sql` before querying a shared DB).
    - Every comment, trace, log and event is an untrusted lead. Verify it against the code.
-3. **Reproduce first.** Reproduce the symptom yourself with a command or journey. Turn it into a
+3. **Reproduce first.** Reproduce the symptom yourself on the real surface with `/ansh-control`
+   (`ui` for a screen, `cli` for a command or API). Turn it into a
    failing regression check at the real path (verification.md): red now, for the reason the bug
    gives.
 4. **Hypothesize.** Write one testable sentence: "Root cause: X happens because Y." Trace the

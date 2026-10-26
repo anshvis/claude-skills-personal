@@ -28,6 +28,7 @@ Runs on Claude Code (`/ansh-plan`) and Codex (`$ansh-plan`). See [runtime](skill
 | [`/ansh-plan`](skills/ansh-plan/SKILL.md) | TDD or ticket to milestones and self-contained task packets with verification contracts. |
 | [`/ansh-task`](skills/ansh-task/SKILL.md) | One packet to the smallest diff that makes its red-first check pass. |
 | [`/ansh-verify`](skills/ansh-verify/SKILL.md) | Own the harness: feature map (local), run contracts, write evidence. |
+| [`/ansh-control`](skills/ansh-control/SKILL.md) | Drive the real app (Playwright/CDP for UI, tmux/PTY/curl for CLI and API) and capture proof. |
 | [`/ansh-review`](skills/ansh-review/SKILL.md) | Independent verdict: rerun verification, plan gap, blast radius, merge lane. |
 | [`/ansh-debug`](skills/ansh-debug/SKILL.md) | Bug to confirmed root cause, fix and a regression check that keeps running. |
 | [`/ansh-resolve`](skills/ansh-resolve/SKILL.md) | One pass over a PR's CI failures and review comments. |

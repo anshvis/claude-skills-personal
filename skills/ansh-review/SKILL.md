@@ -10,7 +10,7 @@ description: "Give an independent PASS, REVISE or DEBUG verdict on a task or PR 
 **Uses:** [runtime](../_shared/runtime.md), [autonomy](../_shared/autonomy.md),
 [verification](../_shared/verification.md), [principles](../_shared/principles.md),
 [stacking](../_shared/stacking.md), [ledger](../_shared/ledger.md) (`../_shared/ansh-log`),
-[/ansh-verify](../ansh-verify/SKILL.md), [/codex](../codex/SKILL.md),
+[/ansh-verify](../ansh-verify/SKILL.md), [/ansh-control](../ansh-control/SKILL.md), [/codex](../codex/SKILL.md),
 [/review-fresh](../review-fresh/SKILL.md), [/ansh-debug](../ansh-debug/SKILL.md),
 [/ansh-plan](../ansh-plan/SKILL.md), [/ansh-correct](../ansh-correct/SKILL.md),
 [output format](references/output.md).
@@ -32,6 +32,7 @@ phase runs in both modes.
    packet's contract at the head SHA. Then judge it:
    - **Strength.** Could it pass while the feature is broken? If yes, it's Act on
      (`weak-verification`). Rerun a check on the base when red-first evidence is missing or doubtful.
+     For a visible change, drive the changed screen yourself with `/ansh-control ui` once.
    - **Surface.** Compare the declared Surface with the diff per verification.md. A diff touching
      routes, `.tsx`, copy, styles or iOS views is at least `visible`. A mismatch is Act on
      (`wrong-surface`).
