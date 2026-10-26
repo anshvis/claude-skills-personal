@@ -1,8 +1,12 @@
 # /ansh-review output
 
+One format for every mode. `pr` mode returns this block from its `/ansh-review` lens plus the gate
+rows ([gate](gate.md)). `goal` mode counts criteria against `acceptance_criteria[]`.
+
 ## Verdict block
 
 ```
+MODE: task <id> | pr <n> | goal (evaluation <1 | 2>)
 VERDICT: PASS | REVISE | DEBUG
 SHA: <head sha reviewed>
 CRITERIA: <n met> / <n total>
@@ -26,6 +30,7 @@ DISMISSED: [ {finding, raised_by, why} ... ]
 AGREEMENT: <where reviewers agreed and diverged, and what that says>
 BUGS: [ {symptom, why root cause is non-obvious} ... ]   # -> /ansh-debug
 REPEAT_CLASSES: [ {class, reason, seen: n, events} ... ]   # -> /ansh-correct
+GATE: <pr mode: worst severity, rows, reused from <sha> | fresh>
 ```
 
 - **PASS**: no Act on items, verification rerun passed at the head SHA, plan gap none or small
