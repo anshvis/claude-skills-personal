@@ -9,12 +9,14 @@ description: Own the verification harness (feature map, local stack recipes, evi
 
 **Uses:** [verification](../_shared/verification.md), [autonomy](../_shared/autonomy.md),
 [principles](../_shared/principles.md), [ledger](../_shared/ledger.md), [runtime](../_shared/runtime.md),
-[feature map template](references/feature-map-template.md), [/ansh-control](../ansh-control/SKILL.md) (driving), `ui-evidence`, `verify-web`, `verify-ios`,
+[feature map template](references/feature-map-template.md), [/ansh-control](../ansh-control/SKILL.md) (ui half),
+[/ansh-backend](../ansh-backend/SKILL.md) (backend half), `ui-evidence`, `verify-web`, `verify-ios`,
 `/lightweight-sql`, and the toolkit's `verification-lenses.md` and `evidence-pack.md`
 (`~/.agentic-workflow/toolkit/skills/_shared/`).
 
 The contract shape, surface rules, evidence pack layout and what is not a pass live in
-[verification](../_shared/verification.md). This skill executes them.
+[verification](../_shared/verification.md). This skill executes them and routes each check by its
+surface. Never pick the verifier by hand.
 
 ## Paths
 
@@ -52,21 +54,24 @@ dropping across two retros since the map was set up. `/ansh-retro` reports that 
 2. Pin the SHA. Normal mode: head of the task branch. `--red-first`: the base SHA, in a separate
    worktree. Record it before any check runs.
 3. Doctor. Launch only if doctor fails and the stack is yours to start. Doctor again after launch.
-4. Run each check by surface ([verification](../_shared/verification.md#by-surface)):
-   - **visible:** read the feature's map file. Write a `ui-evidence` script from its selectors and
-     the check (not from the diff), run it with `--app-build <sha>`. For lenses beyond functional,
-     run `verify-web --yes --journey <plan>` (`verify-ios --yes` for iOS). Then the read-only data cross-check.
-   - **data-visible:** the invisible checks, plus one read-only `ui-evidence` check with no write steps.
-   - **CLI or API:** `/ansh-control cli`: the command or `curl`. Save the command, exit code, stdout and stderr.
-   - **invisible:** the named tests, the DB check on a branch DB, perf (base and head, 3 runs
-     each, limiter named), and the production signal firing locally.
+4. Route each check by its [surface](../_shared/verification.md#surface) (`visible` and
+   `invisible` read as `ui` and `backend`):
+   - **ui:** `/ansh-control`. Read the feature's map file, write a `ui-evidence` script from its
+     selectors and the check (not from the diff), run it with `--app-build <sha>`. For lenses
+     beyond functional, `verify-web --yes --journey <plan>` (`verify-ios --yes` for iOS).
+   - **backend**, and any CLI or API check: `/ansh-backend`: the named tests, the DB check, perf,
+     and the production signal firing locally.
+   - **data-visible:** `/ansh-backend`, then one read-only `/ansh-control` look with no write steps.
+   - **full-stack:** end to end in one session on one stack at the pinned SHA: `/ansh-control`
+     performs the action, `/ansh-backend` asserts its side effects. Pass only when both end states
+     match. Then each half's own checks.
 5. Write the pack: copy each tool's output (`summary.json`, `pack.json`, screenshots) into the
    evidence dir, then `verdict.json` per [verification](../_shared/verification.md#evidence-pack), and
    update `<sha>/manifest.json` with every expected check from the PR's packets.
    A check passes only if it ran at the pinned SHA and its observable result matched.
 6. `--red-first`: every check must fail for the stated reason. A check that passes on base is
    `weak`: report it so the author rewrites it. A check that fails for another reason is `broken`.
-7. On Ansh's own PR, post the short evidence comment. No Linear upload, no `publishEvidence`.
+7. On Ansh's own PR, post the evidence comment per [verification](../_shared/verification.md#evidence-pack). No `publishEvidence`.
 8. Cleanup what you started. Confirm the evidence dir survived.
 9. Log one event per check: `ansh-log ansh-verify run <PASS|REVISE> --task T --surface S --ids AC-n`.
 10. Update the feature's `Last verified` SHA. Map drift found while driving: fix the map file now.
