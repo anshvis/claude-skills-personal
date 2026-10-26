@@ -29,29 +29,47 @@ during a run).
   depends on: report BLOCKED with what's missing. Never fabricate it or mark an unchecked gate green.
 - Track progress with the host's todo tool, or a small `.ansh/progress.md` when there isn't one.
 
-## Models (quality first, OpenAI preferred)
+## Models (Sonnet and Opus workers, Fable/Astra advisors)
 
 | Work | Model | Effort |
 |---|---|---|
-| Mechanical edits, formatting, easy-to-check summaries | `gpt-6-luna` | medium |
-| Implementation, ordinary debugging, orchestration | `gpt-6.1-sol` | high |
-| Planning, review, hard debugging, high-risk changes | `gpt-6-astra` | high; xhigh or max when hard |
+| Routine implementation, exploration, orchestration and task-role fan-out | Claude Sonnet or `gpt-6.1-sol` | medium; high when needed |
+| Demanding implementation, planning, review and hard debugging | Claude Opus; `gpt-6.1-sol` on OpenAI | high when needed |
+| Advisor help for a genuinely challenging unresolved question | Fable or Astra through the host's advisor mechanism only | scoped to the question |
 
-- Luna only for clearly mechanical work. Sol when judgment or real code is involved.
-- Go to Astra at once for ambiguity, tangled dependencies, security or data-loss risk, concurrency,
-  or low confidence. Don't burn failed attempts first. Reassess the model after every failed
-  hypothesis.
-- Never downgrade to save cost. Legacy `economy`/`sonnet` stamps mean Sol; `reasoning`/`opus` mean Astra.
-- Refresh the live model catalog before dispatch. If the preferred model is missing, use the
-  strongest available one in the family and say so. Never claim a switch the host didn't make.
-- On T3, pick the Codex provider instance; use native delegation when it supports the model and
-  `delegate_task` for cross-provider or worktree-isolated work. A Claude parent may run OpenAI
-  children that way. Keep any model I named for a task.
+- Sonnet and Opus handle the bulk of Claude work. Use Sonnet for routine, bounded tasks and
+  Opus when the task needs deeper judgment; Opus is a worker model, not advisor-only. GPT Sol
+  remains the OpenAI worker. Choose each child's model explicitly from its own task rather
+  than inheriting an expensive parent's model across all fan-out.
+- Haiku/Luna are not part of normal routing. Use scripts for tiny deterministic chores where
+  practical; otherwise keep the work on Sonnet/Sol. Do not create small-model subagents just
+  to offload a trivial step. Use Haiku/Luna only when the user explicitly requests them.
+- Give task children a clear scope, acceptance criteria and runnable checks; require evidence
+  before accepting their results. A role name or Deep stamp alone does not justify escalation.
+- Fable/Astra are advisor-only. Never select them as the primary session model, task worker,
+  planner, orchestrator, reviewer or standalone delegated agent. For genuinely challenging
+  unresolved questions, the Sonnet/Opus/Sol owner may seek focused help through an available
+  host advisor mechanism, then verify the advice and own the decision. Routine uncertainty
+  does not warrant an advisor call. If no advisor mechanism is available, continue on an
+  allowed worker and surface unresolved uncertainty; do not launch a Fable/Astra child instead.
+- Preserve model choices explicitly requested by the user. Old packet stamps and inherited
+  defaults do not override this policy: `economy`/`sonnet` means Sonnet or Sol;
+  `reasoning`/`opus` means Opus or Sol. Replace Fable/Astra worker stamps with an allowed worker,
+  retaining the required checks and review depth. This policy does not change the PR gate's
+  lenses or merge requirements.
+- Refresh the live model catalog before dispatch. If the preferred worker is unavailable,
+  choose an available Sonnet, Opus or Sol appropriate to the task and disclose the fallback.
+  Do not fall back to Fable/Astra workers. Never claim a switch the host didn't make.
+- On T3, prefer the Codex provider instance for OpenAI models; native Sonnet and Opus task
+  children are also allowed. Use native delegation when it supports the chosen model and
+  `delegate_task` for cross-provider or worktree-isolated work. A Claude parent may run Sol
+  children that way.
 
 ## Independent review
 
-- Prefer a strong reviewer on a different model from the author (Astra by default). If the author
-  already used Astra, a fresh-context Astra beats a weaker model picked for diversity.
+- Use a fresh-context Sonnet, Opus or Sol reviewer suited to the change. Prefer a different
+  worker model from the author when available; otherwise use a fresh context on the same model.
+  Fable/Astra advisor output does not replace the independent review or its verification.
 - Give the reviewer the intent, criteria, diff or plan path, standards and read-only scope. Not the
   author's reasoning. Forbid it from delegating or re-entering the loop.
 - On Claude or Cursor, the `codex` skill works when Codex is installed and authenticated. A second Codex process on a

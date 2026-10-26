@@ -14,8 +14,10 @@ description: "Turn a TDD, Linear ticket or prose goal into milestones and self-c
 [plan.json](references/plan-json.md), `effort-dial`, `gold-star`, `lightweight-sql`,
 `/ansh-small-loop`, `/ansh-loop`.
 
-You write no code. Plan on Astra at high effort; a Deep goal gets max. Take your time here: a
-sloppy plan makes every later round more expensive.
+You write no code. Plan on Sonnet/Opus/Sol at high effort; a Deep goal uses `max` or the host's
+highest supported equivalent. Use focused advisor help per runtime when needed; Fable/Astra never
+own the plan or its child tasks. Take your time here: a sloppy plan makes every later round more
+expensive.
 
 ## Steps
 
@@ -146,7 +148,7 @@ Loops also send you architectural REVISE findings and tasks that hit the iterati
 | A Q-n or reviewer question is a product call | Agent default D-n with the alternative. Never ask. |
 | Irreversible rollout or data-destroying merge | `parked_at_merge: true` on the milestone, PR and tasks. |
 | Perf-sensitive milestone without a budget | Default budget from verification, noted. |
-| A task won't split below Deep | Stamp Astra, return DONE_WITH_CONCERNS naming it. |
+| A task won't split below Deep | Stamp Sonnet/Opus/Sol with high effort and the required verification; use advisor help per runtime if needed. Return DONE_WITH_CONCERNS naming it. |
 | Diff will touch SQL or Drizzle | The packet tells the specialist to apply `lightweight-sql`. |
 | Re-entry change of direction widens scope past the ticket | Do this ticket's share. Create a ticket for the rest. |
 | Old plan lacks the three lists, milestones or Verification | Backfill them (steps 2, 3, 5), then challenge. |

@@ -7,6 +7,8 @@ description: "Cross-model review with the OpenAI Codex CLI, the \"outside voice\
 
 **Runtime:** Read [ANSH runtime compatibility](../_shared/runtime.md) before starting.
 Use its tool, model, path and review mappings for provider-specific examples below.
+Explicitly select `gpt-6.1-sol` for every CLI invocation, including resume, unless the user
+explicitly requested another model. Never inherit an Astra/Fable worker default.
 
 Runs the Codex CLI directly as an explicitly Codex-specific helper. Its name does not
 prove the reviewer differs from the author. ANSH's default outside-review path uses the
@@ -88,8 +90,11 @@ Review the changes on this branch against <base>. Run \`git diff origin/<base>..
 \`git diff <base>...HEAD\` if origin isn't available) to see the diff and review only those
 changes. Score against these done-criteria: <paste the subtask's done-criteria>. Also check
 these edge cases the plan flagged: <paste the packet's 'Watch out for' list>. Mark findings
-[P1] (critical) or [P2] (advisory)." -c 'model_reasoning_effort="high"' < /dev/null
+[P1] (critical) or [P2] (advisory)." -c 'model="gpt-6.1-sol"' -c 'review_model="gpt-6.1-sol"' -c 'model_reasoning_effort="high"' < /dev/null
 ```
+
+Set both `model` and `review_model` for review mode: a configured `review_model` takes
+precedence over the session model. If the user specifies a different reviewer, override both.
 
 - Gate: any `[P1]` marker in the output → **FAIL**. Only `[P2]` or no findings → **PASS**.
 - Present Codex's output **verbatim, in full** — never summarized or truncated.
@@ -111,7 +116,7 @@ backfill, feature flags, rollout/rollback, telemetry, tests, docs); wrong orderi
 dependencies; unhandled edge cases the feature-wide analysis missed; weak/untestable
 done-criteria; subtasks that are secretly Deep hiding as Standard; wrong layering (business
 logic in a repo, raw SQL outside a repo, an invented pattern). Be adversarial. Be thorough. No
-compliments — just the problems." -s read-only -c 'model_reasoning_effort="high"' < /dev/null
+compliments — just the problems." -s read-only -c 'model="gpt-6.1-sol"' -c 'model_reasoning_effort="high"' < /dev/null
 ```
 
 - Present the full output verbatim.
@@ -127,10 +132,10 @@ Read-only exec with the question. Pipe long prompts through stdin rather than on
 cd "$(git rev-parse --show-toplevel)"
 printf '%s' "<filesystem boundary>
 
-<question + any file/line pointers>" | perl -e 'alarm shift; exec @ARGV' 600 codex exec - -s read-only -c 'model_reasoning_effort="high"'
+<question + any file/line pointers>" | perl -e 'alarm shift; exec @ARGV' 600 codex exec - -s read-only -c 'model="gpt-6.1-sol"' -c 'model_reasoning_effort="high"'
 ```
 
-For a follow-up in the same thread, use `codex exec resume --last -` with the same stdin pattern. If
+For a follow-up in the same thread, use `codex exec resume --last - -c 'model="gpt-6.1-sol"'` with the same stdin pattern. If
 resume fails, start a fresh exec and say so.
 
 ## Invocation gotchas

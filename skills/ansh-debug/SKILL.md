@@ -17,7 +17,8 @@ description: "Take a bug to a confirmed root cause, then a fix and a regression 
 
 Iron law: no fix without a confirmed root cause. A patch that hides the symptom without explaining
 it brings the bug back in another form. The job is a fixed bug with a green regression test, not a
-diagnosis note. Start on Sol, go to Astra per runtime.md.
+diagnosis note. Debug on Sonnet/Opus/Sol; use focused advisor help per runtime.md when needed.
+Fable/Astra never become the debugging worker.
 
 ## Steps
 

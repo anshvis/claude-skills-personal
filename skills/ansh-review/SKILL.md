@@ -17,8 +17,10 @@ description: "Give an independent PASS, REVISE or DEBUG verdict on a task, a PR 
 [/ansh-correct](../ansh-correct/SKILL.md), [memory](../_shared/memory.md), [PR gate](references/gate.md),
 [blast radius](references/blast-radius.md), [output format](references/output.md).
 
-Review on Astra per runtime, xhigh on the deep lane. Never on a cheap model: a shallow review gives
-false confidence.
+Review on a fresh-context Sonnet/Opus/Sol per runtime at high effort. The deep lane uses `xhigh`
+or the host's highest supported equivalent. Haiku/Luna are excluded from default routing;
+explicit user model requests follow runtime. Fable/Astra may advise through the host advisor
+mechanism only; they do not own a review lens. Preserve every required lens and verification check.
 
 ## Modes
 
