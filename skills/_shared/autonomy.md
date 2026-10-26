@@ -8,7 +8,7 @@ acceptance criteria (ACs) in the PRD or TDD. Everything after that is yours.
 - **A fact gets settled by running something.** Behavior, timing, layout, output, perf, whether a
   query is slow: prototype it, query it, or test it. Don't ask.
 - **A product or preference call gets a default.** Pick the option most consistent with the PRD
-  and current behavior. Record it in `.ansh/plan.md` as `D-n (agent default): <call>. You could
+  and current behavior. Record it in `.ansh/decisions.md` as `D-n (agent default): <call>. You could
   tell me instead: <alternative>.` Keep going. The final report lists every agent default.
 - **Missing ACs get inferred.** Derive them from the ticket and PRD, mark each `inferred`, and keep
   going. The final report lists inferred ACs first.

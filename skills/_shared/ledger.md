@@ -32,6 +32,7 @@ time, repo, branch, head SHA and cwd. A failed log write never fails the skill: 
 
 | Skill | Log at |
 |---|---|
+| `/ansh-small-loop`, `/ansh-loop` | tier picked, each wave, final status |
 | `/ansh-plan` | plan written, challenge done (one event per agent default) |
 | `/ansh-task` | red check written, done (attempt n) |
 | `/ansh-review` | verdict per task, whole-goal verdict |

@@ -47,7 +47,8 @@ Exit gate
 - **I write:** the ACs and what proves each one (feature success).
 - **The agent writes:** everything else in the block. `/ansh-plan` drafts missing blocks from
   `PR order`, `File blast radius`, `Failure modes` and `Rollout`, keeps them in `.ansh/plan.md`,
-  and adds them to the Linear doc with a comment noting they were agent-drafted.
+  and posts them as a comment on the goal's own ticket, marked agent-drafted. It never edits the
+  team's TDD doc during a run.
 
 ## Checks `/ansh-plan` runs on a TDD (Phase 0)
 
