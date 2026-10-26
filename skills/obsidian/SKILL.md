@@ -34,16 +34,9 @@ re-implement the aggregation inline here.
 Every note has YAML frontmatter: `source` (slack|linear|granola|repo), `type`, `date` (ISO), `tags`,
 and `people`/`attendees` where relevant. Bodies use `[[wikilinks]]` for people/topics and `#tags`.
 
-**Canonical topics** (search these tags/wikilinks, don't invent new ones unless a note clearly
-uses one): `[[customer]]` `topic/customer` · `[[UKG Integration]]` `topic/ukg-integration` ·
-`[[Availability Requests]]` `topic/availability-requests` · `[[topic]]` `topic/topic` ·
-`[[Schedule Insights]]` `topic/schedule-insights` · `[[Data Ingestion]]` `topic/data-ingestion` ·
-`[[Overtime]]` `topic/overtime` · `[[Pay Period]]` `topic/pay-period` · `[[Incidents]]` `topic/incidents`.
-
-**People**: `[[Ansh Viswanathan]]`, `[[Teammate]]`, `[[Teammate]]`, `[[Teammate]]`,
-`[[Teammate]]`, `[[Teammate]]`, `[[Teammate]]`, `[[Teammate]]`, `[[Teammate]]`,
-`[[Teammate]]`, `[[Teammate]]`, and customer externals `[[Customer contact]]`,
-`[[Customer contact]]`, `[[Customer contact]]`.
+**Canonical topics and people**: the vault's own tag list and people notes. List them first
+(`grep -rhoE '#topic/[a-z0-9-]+' <vault> | sort | uniq -c`, and the `People/` folder) and search
+those. Don't invent a new topic unless a note clearly needs one.
 
 ## How to recall
 

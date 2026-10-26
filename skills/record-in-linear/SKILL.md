@@ -23,11 +23,11 @@ If the chat is too sprawling to extract from confidently, ask once: "Which threa
 
 Use `AskUserQuestion` exactly once. Phrase it as: "Which Linear project should this document attach to? (Or save to your personal notes.)" Offer:
 
-- **A specific project** — user pastes a Linear project URL, ID, or names it (e.g., "UKG integration", "customer onboarding"). You'll resolve via Linear search.
+- **A specific project** — user pastes a Linear project URL, ID, or names it (e.g., "billing integration", "customer onboarding"). You'll resolve via Linear search.
 - **Personal notes** — falls back to the user's personal-notes project (resolved or created in Step 2b).
 - **Other** — free-text destination the user describes.
 
-If the user already named a project in the chat ("save this under the UKG integration project"), still confirm the resolved project with them once before writing — Linear projects often have similar names.
+If the user already named a project in the chat ("save this under the billing integration project"), still confirm the resolved project with them once before writing — Linear projects often have similar names.
 
 ## Step 2 — Resolve the destination
 
