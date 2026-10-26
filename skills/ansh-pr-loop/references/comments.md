@@ -41,8 +41,9 @@ Ready to merge at `<short sha>`: CI green, verification passed (<evidence link>)
 Branch protection needs an approval from <@codeowner or team>. Requested.
 ```
 
-For an `/ansh-correct` PR, replace the last line with `Hardening PR: requesting @anshvis's review.
-The loop never merges these.`
+Use this only when an actual approval is required. Cornerstone and `/ansh-correct` PRs follow
+the same merge rule. For incomplete verification, update the evidence comment with the missing
+proof and the next check to add; strengthen it before merging.
 
 ## Deep lane
 

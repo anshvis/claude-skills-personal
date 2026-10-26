@@ -57,20 +57,28 @@ when the head hasn't moved.
    of step 8. Don't wait for a green that needs the parked step.
    **Converged when all hold on the head SHA:** every required check's build for this SHA passed;
    no review at `CHANGES_REQUESTED`; `/ansh-resolve` returned DONE with every comment traced;
-   vitalize-agent passed this SHA; every gate blocker and major is fixed or has an agent default;
-   no new major-or-worse finding since the gate; `/ansh-review` says `VERDICT: PASS`.
+   vitalize-agent passed this SHA; every gate blocker and major is fixed or dismissed with
+   evidence verified by the appropriate lens; the thermo-nuclear lens meets its approval bar;
+   no new major-or-worse finding since the gate; `/ansh-review` says `VERDICT: PASS` and
+   `LOOP_CLOSURE: closed`. An agent default alone cannot waive a verification or quality finding.
 7. **Prove the head.** Run `/ansh-verify run` for the PR's packets at this exact SHA. Its
    `manifest.json` must list every check in every packet this PR covers, each passing
    ([verification](../_shared/verification.md#evidence-pack)). Any new commit, including a base
-   merge, needs it again. `/ansh-verify` posts the evidence comment.
-8. **Merge decision**, first match wins:
+   merge, needs it again. Apply [closing the loop](../_shared/verification.md#closing-the-loop):
+   a passing manifest must cover the intended behavior and affected callers, not just the checks
+   the author happened to list. Missing coverage returns to verification and review before step 8.
+   `/ansh-verify` posts the evidence comment.
+8. **Merge decision**, first match wins. Cornerstone, foundational and `ansh-correct` PRs use
+   these same gates; their names and labels add no approval hold.
    - Not our PR: never merge, never post. Report the gate findings. Outcome `needs_review`.
-   - `/ansh-correct` hardening PR (label `ansh-correct` or title prefix `ansh-correct:`): request
-     Ansh as reviewer, post the comment, stop. Outcome `awaiting_approval`.
    - `PARKED: yes`, or merging would do anything on autonomy's never-do list: post the parked
      comment with the exact command or click, log `parked`, stop. Outcome `parked`.
    - `WAITING_ON` not empty: hold. Keep watching. Merge only after every dependency merged and
      the base is current ([stacking](../_shared/stacking.md)).
+   - `LOOP_CLOSURE` missing or open, or `QUALITY` missing or not pass: return to steps 3–7
+     to strengthen verification or resolve quality findings. Older gate reports need review
+     again. Unavailable required capabilities return BLOCKED with the missing piece. Neither
+     merge nor arm auto-merge until both gates pass at the head SHA.
    - `MERGE_LANE: deep`: run `/ansh-review pr <n>` in the deep lane at the head SHA in a fresh
      subagent; it does the fresh-context review and re-runs the verification itself. Its
      `DEEP_LANE` line must read `done` and `pass`. On pass, record `deep_lane_sha` in the state

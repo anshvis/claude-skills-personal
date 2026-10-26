@@ -34,16 +34,20 @@ it. Parked items go in the final report with the exact command or click I'd need
 ## Merge rule
 
 My own PRs squash-merge when all of these hold on the head SHA:
-1. The verification contract passes (see [verification](verification.md)), with evidence.
+1. Verification closes the loop per [verification](verification.md#closing-the-loop), with evidence.
 2. CI is green.
-3. `/ansh-review` returned PASS and no review blocks.
+3. `/ansh-review` returned PASS, `/thermo-nuclear-code-quality-review` passed, and no review blocks.
 4. It isn't parked.
 
 A high blast radius doesn't stop a merge. It adds the deep lane: a fresh-context review plus an
 independent re-run of the verification, both at the head SHA. If branch protection needs a
 non-author approval, request it from the CODEOWNERS and report `awaiting_approval`.
 
-`/ansh-correct` PRs never merge from the loop. They request me as reviewer and stop.
+This rule also applies to cornerstone, foundational and `/ansh-correct` hardening PRs. Their
+label or architectural importance adds no human approval gate. Verification must prove the
+intended result and affected callers, and the quality review must uphold the code standards.
+A verification gap goes back to the loop to strengthen the checks; an unclosed gap blocks merge.
+Green CI alone, a missing quality review or an agent default cannot satisfy those gates.
 
 ## Stop conditions
 

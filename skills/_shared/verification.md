@@ -26,6 +26,30 @@ Rules:
   that a function was called.
 - **Rerunnable.** Every check is a command another agent can run at a given SHA. Keep the script.
 
+## Closing the loop
+
+Auto-merge requires evidence at the head SHA that covers every acceptance criterion, the actual
+changed user or caller path, its side effects, relevant failure modes and affected existing
+callers. Use the surface, regression and performance rules below to derive the checks. The
+reviewer reruns them and explains why they would detect the intended behavior being wrong.
+
+For a cornerstone or foundational PR whose consumers arrive later, validate its own contract
+through realistic callers and integration checks. State exactly what that proves; later PRs own
+their end-to-end feature checks. If this PR's promised result depends on an untested consumer,
+its loop is still open. Architectural importance alone does not require a human checkpoint.
+
+For `/ansh-correct`, replay the historical mistake to prove it is rejected, prove the corrected
+case passes, and exercise valid affected callers so the new guard does not just reject everything.
+
+Record `LOOP_CLOSURE: closed` with criterion-to-evidence links, or `open` with each missing proof
+and the next check to add. An open loop is REVISE: strengthen verification and rerun it. If the
+needed environment or reviewer is unavailable, report BLOCKED with the missing capability. A
+skipped or inconclusive required check cannot close the loop, even when its reason is recorded.
+
+Behavioral evidence and code quality are separate merge gates. The PR gate must also apply
+`/thermo-nuclear-code-quality-review` and meet its approval bar. Working behavior does not waive
+structural findings; a missing review is not a pass.
+
 ## Surface
 
 The surface is the set of halves a change touches. It is derived from the change, never picked by

@@ -39,7 +39,7 @@ Runs on Claude Code and Cursor (`/ansh-plan`), and Codex (`$ansh-plan`). See [ru
 | [`/ansh-ship`](skills/ansh-ship/SKILL.md) | Push the plan's PRs per stacking, open or update them with ticket links, start their PR loops. |
 | [`/ansh-resolve`](skills/ansh-resolve/SKILL.md) | One pass over a PR's CI failures, comments and gate findings. The only skill that fixes PR findings. |
 | [`/ansh-pr-loop`](skills/ansh-pr-loop/SKILL.md) | Babysit one PR: gate, resolve until mergeable, prove the head, merge under the merge rule. |
-| [`/ansh-correct`](skills/ansh-correct/SKILL.md) | Turn a repeated mistake into a lint, type or CI check. PRs wait for my review. |
+| [`/ansh-correct`](skills/ansh-correct/SKILL.md) | Turn a repeated mistake into a structural check; auto-merge when verification and code-quality gates pass. |
 | [`/ansh-retro`](skills/ansh-retro/SKILL.md) | Read the ledger, propose cuts to these skills with the numbers, and work the memory queue. |
 | [`/ansh-think`](skills/ansh-think/SKILL.md) | Options and tradeoffs to a recommendation. No code. |
 | [`/ansh-save`](skills/ansh-save/SKILL.md) | Freeze in-flight state so another session can resume it. |
